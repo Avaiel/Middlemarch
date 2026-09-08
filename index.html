@@ -9,141 +9,210 @@
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
 <style>
-  :root{
-    --paper:#efe6cf;
-    --paper-deep:#e6d9b8;
-    --ink:#2c2117;
-    --ink-soft:#5c4d3a;
-    --hairline:#b7a06e;
-    --panel-bg:#f7f0dc;
-    --danger:#8c3b2e;
-    --ok:#425c40;
-    --warn:#b1873c;
+  :root {
+    /* 雀起乡与烛镇：田园、信笺、阳光、草甸 */
+    --paper: #fcfaf5;      /* 干净的日光奶油白 */
+    --paper-deep: #f2eadc; /* 质朴的亚麻布色 */
+    --ink: #54483e;        /* 柔和的深棕色（如同老邮局的墨水） */
+    --ink-soft: #8c8076;   /* 褪色的浅褐色 */
+    --hairline: #d4cbb8;   /* 浅卡其/麦秆色 */
+    --panel-bg: #ffffff;   /* 纯净的信纸底色 */
+    
+    /* 乡村自然点缀色 */
+    --danger: #b56a5d; /* 野玫瑰/砖红 */
+    --ok: #738c62;     /* 雀起乡的草甸绿 */
+    --warn: #d4a755;   /* 阳光与麦穗黄 */
+    --post-blue: #5b7586; /* 烛镇邮局蓝 */
   }
-  *{box-sizing:border-box;}
-  html,body{margin:0;padding:0;height:100%;background:var(--paper);}
-  body{font-family:'EB Garamond', Georgia, serif; color:var(--ink); overflow:hidden;}
-  #app{
-    height:100vh; display:flex; flex-direction:column;
-    background:
-      radial-gradient(ellipse at top left, rgba(255,255,255,0.25), transparent 55%),
-      radial-gradient(ellipse at bottom right, rgba(0,0,0,0.06), transparent 60%),
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; height: 100%; background: #e8e1d5; }
+  body { 
+    font-family: 'EB Garamond', Georgia, serif; 
+    color: var(--ink); 
+    overflow: hidden;
+  }
+  
+  #app {
+    height: 100vh; display: flex; flex-direction: column;
+    /* 晨光般的柔和渐变 */
+    background: 
+      radial-gradient(circle at top left, rgba(255,255,255,1) 0%, transparent 70%),
+      radial-gradient(circle at bottom right, rgba(212,167,85,0.08) 0%, transparent 60%),
       var(--paper);
-    border:1px solid var(--hairline);
+    border: 1px solid var(--hairline);
+    border-radius: 12px; /* 柔和的窗框感圆角 */
+    margin: 8px; 
+    height: calc(100vh - 16px);
+    box-shadow: 0 8px 24px rgba(84, 72, 62, 0.08);
   }
 
-  /* ---------- Toolbar ---------- */
-  #toolbar{
-    display:flex; align-items:center; gap:18px; padding:12px 20px;
-    border-bottom:1px solid var(--hairline); background:var(--paper-deep);
-    flex-wrap:wrap; row-gap:8px;
+  /* ---------- Toolbar (邮局柜台风格) ---------- */
+  #toolbar {
+    display: flex; align-items: center; gap: 18px; padding: 14px 24px;
+    border-bottom: 2px dashed var(--hairline); /* 缝线质感 */
+    background: linear-gradient(to right, var(--paper-deep), var(--paper));
+    border-radius: 12px 12px 0 0;
+    flex-wrap: wrap; row-gap: 8px;
   }
-  .brand{display:flex; flex-direction:column; margin-right:6px; white-space:nowrap;}
-  .brand .cn{font-family:'Playfair Display', serif; font-weight:700; font-size:18px;}
-  .brand .en{font-size:12px; color:var(--ink-soft); font-style:italic;}
-  .legend-group{display:flex; align-items:center; gap:9px; padding:5px 11px; border-left:1px solid var(--hairline); flex-wrap:wrap;}
-  .legend-title{font-size:12px; color:var(--ink-soft); margin-right:1px; white-space:nowrap;}
-  .chip{display:flex; align-items:center; gap:5px; font-size:12px; cursor:pointer; user-select:none; padding:3px 6px; border-radius:3px; white-space:nowrap;}
-  .chip:hover{background:rgba(0,0,0,0.05);}
-  .chip input{accent-color:var(--ink-soft); margin:0;}
-  .swatch{width:10px;height:10px;border-radius:50%;flex:none;border:1px solid rgba(0,0,0,0.25);}
-  .line-sample{width:16px;height:0;border-top:2.5px solid; flex:none;}
-  .line-sample.dashed{border-top-style:dashed;}
-
-  #toolbar-right{margin-left:auto; display:flex; align-items:center; gap:12px; flex-wrap:wrap;}
-  #hint{font-size:11px; color:var(--ink-soft); white-space:nowrap;}
-  #search{font-family:'EB Garamond', serif; font-size:13.5px; padding:5px 9px; border:1px solid var(--hairline); border-radius:3px; background:var(--paper); color:var(--ink); width:140px; outline:none;}
-  #search:focus{border-color:var(--ink-soft);}
-
-  .btn{
-    font-family:'EB Garamond', serif; font-size:13px; padding:6px 12px; border-radius:3px;
-    border:1px solid var(--ink-soft); background:var(--paper); color:var(--ink);
-    cursor:pointer; white-space:nowrap;
+  .brand { display: flex; flex-direction: column; margin-right: 6px; white-space: nowrap; }
+  .brand .cn { 
+    font-family: 'Playfair Display', serif; font-weight: 600; font-size: 20px; 
+    color: var(--post-blue); /* 邮局蓝 */
+    letter-spacing: 0.5px;
   }
-  .btn:hover{background:var(--paper-deep);}
-  .btn.primary{background:var(--ink-soft); color:var(--paper); border-color:var(--ink-soft);}
-  .btn.primary:hover{background:var(--ink);}
-  .btn.danger{border-color:var(--danger); color:var(--danger); background:transparent;}
-  .btn.danger:hover{background:rgba(140,59,46,0.1);}
-  .btn.small{font-size:12px; padding:4px 9px;}
+  .brand .en { font-size: 13px; color: var(--ok); font-style: italic; margin-top: 2px; }
+  
+  .legend-group { display: flex; align-items: center; gap: 9px; padding: 5px 14px; border-left: 1px dotted var(--hairline); flex-wrap: wrap; }
+  .legend-title { font-size: 13px; font-style: italic; color: var(--ink-soft); margin-right: 2px; white-space: nowrap; }
+  .chip { display: flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer; user-select: none; padding: 4px 10px; border-radius: 20px; white-space: nowrap; transition: background 0.2s;}
+  .chip:hover { background: rgba(115,140,98,0.08); }
+  .chip input { accent-color: var(--ok); margin: 0; cursor: pointer; }
+  .swatch { width: 12px; height: 12px; border-radius: 50%; flex: none; border: 1px solid rgba(0,0,0,0.1); box-shadow: inset 1px 1px 2px rgba(255,255,255,0.8); }
+  .line-sample { width: 18px; height: 0; border-top: 2px solid; flex: none; }
+  .line-sample.dashed { border-top-style: dashed; }
 
-  #save-status{font-size:11.5px; color:var(--ink-soft); display:flex; align-items:center; gap:5px; white-space:nowrap;}
-  #save-status .dot{width:7px;height:7px;border-radius:50%;background:var(--ok);}
-  #save-status.saving .dot{background:var(--warn);}
-  #save-status.error .dot{background:var(--danger);}
+  #toolbar-right { margin-left: auto; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  #hint { font-size: 12px; font-style: italic; color: var(--ink-soft); white-space: nowrap; }
+  
+  #search { 
+    font-family: 'EB Garamond', serif; font-size: 14px; padding: 6px 14px; 
+    border: 1px solid var(--hairline); border-radius: 20px; 
+    background: #fff; color: var(--ink); width: 160px; outline: none;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.02);
+    transition: all 0.2s ease;
+  }
+  #search:focus { border-color: var(--post-blue); box-shadow: 0 0 0 3px rgba(91,117,134,0.1); }
 
-  #edit-toolbar{display:none; align-items:center; gap:8px; padding:0 11px; border-left:1px solid var(--hairline);}
-  #edit-toolbar.show{display:flex;}
+  /* 柔润的田园风药丸按钮 */
+  .btn {
+    font-family: 'EB Garamond', serif; font-size: 13.5px; padding: 6px 16px; border-radius: 20px;
+    border: 1px solid var(--hairline); background: #fff; color: var(--ink);
+    cursor: pointer; white-space: nowrap; font-weight: 500;
+    box-shadow: 0 2px 4px rgba(84,72,62,0.04); transition: all 0.2s ease;
+  }
+  .btn:hover { background: var(--paper-deep); transform: translateY(-1px); box-shadow: 0 4px 8px rgba(84,72,62,0.06); }
+  .btn:active { transform: translateY(0); box-shadow: none; }
+  .btn.primary { background: var(--ok); color: #fff; border-color: var(--ok); }
+  .btn.primary:hover { background: #617852; }
+  .btn.danger { border-color: var(--danger); color: var(--danger); background: transparent; }
+  .btn.danger:hover { background: rgba(181,106,93,0.08); }
+  .btn.small { font-size: 12.5px; padding: 4px 12px; }
+
+  #save-status { font-size: 12px; font-style: italic; color: var(--ink-soft); display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+  #save-status .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); }
+  #save-status.saving .dot { background: var(--warn); }
+  #save-status.error .dot { background: var(--danger); }
+
+  #edit-toolbar { display: none; align-items: center; gap: 10px; padding: 0 14px; border-left: 1px dotted var(--hairline); }
+  #edit-toolbar.show { display: flex; }
 
   /* ---------- Main area ---------- */
-  main{flex:1; display:flex; min-height:0;}
-  #graph-wrap{flex:1; position:relative; min-width:0;}
-  svg#graph{width:100%; height:100%; display:block; cursor:grab;}
-  svg#graph:active{cursor:grabbing;}
+  main { flex: 1; display: flex; min-height: 0; border-radius: 0 0 12px 12px; overflow: hidden; }
+  
+  /* 调整容器并添加乡村背景图水印 */
+  #graph-wrap { 
+    flex: 1; 
+    position: relative; 
+    min-width: 0; 
+    overflow: hidden; 
+  }
+  
+  #graph-wrap::before {
+    content: "";
+    position: absolute;
+    inset: 0; 
+    background-image: url('image_d9fc57.png'); /* 乡村图景文件名 */
+    background-position: center bottom; 
+    background-repeat: no-repeat;
+    background-size: 70%; 
+    opacity: 0.15; /* 水印透明度 */
+    mix-blend-mode: multiply; /* 正片叠底，让线条像印在纸上 */
+    pointer-events: none; /* 穿透鼠标点击，不影响拖拽节点 */
+    z-index: 0;
+  }
 
-  .node-label{font-family:'Playfair Display', serif; font-size:12.5px; font-weight:600; fill:var(--ink); pointer-events:none; paint-order:stroke; stroke:var(--paper); stroke-width:3px;}
-  .node-label-en{font-family:'EB Garamond', serif; font-style:italic; font-size:9.5px; fill:var(--ink-soft); pointer-events:none; paint-order:stroke; stroke:var(--paper); stroke-width:3px;}
-  .node-circle{stroke:#2c2117; stroke-width:1.2px; cursor:pointer;}
-  .node-circle.selected{stroke:#2c2117; stroke-width:2.8px;}
-  .node.hidden{display:none;}
-  .node.dimmed .node-circle{opacity:0.15;}
-  .node.dimmed .node-label,.node.dimmed .node-label-en{opacity:0.15;}
-  .node.editable .node-circle{stroke-dasharray:2,2;}
+  svg#graph { 
+    width: 100%; 
+    height: 100%; 
+    display: block; 
+    cursor: grab; 
+    position: relative;
+    z-index: 1; 
+  }
+  svg#graph:active { cursor: grabbing; }
 
-  .edge{fill:none; stroke-width:1.6px;}
-  .edge.hidden{display:none;}
-  .edge.dimmed{opacity:0.08;}
-  .edge-hit{fill:none; stroke:transparent; stroke-width:14px; cursor:pointer;}
+  /* 节点视觉：更加通透清爽 */
+  .node-label { font-family: 'Playfair Display', serif; font-size: 13px; font-weight: 600; fill: var(--ink); pointer-events: none; paint-order: stroke; stroke: rgba(252,250,245,0.9); stroke-width: 4px; stroke-linejoin: round; }
+  .node-label-en { font-family: 'EB Garamond', serif; font-style: italic; font-size: 11px; fill: var(--post-blue); pointer-events: none; paint-order: stroke; stroke: rgba(252,250,245,0.9); stroke-width: 3px; stroke-linejoin: round; }
+  .node-circle { stroke: #fff; stroke-width: 2px; cursor: pointer; filter: drop-shadow(0 2px 4px rgba(84,72,62,0.12)); transition: filter 0.2s; }
+  .node-circle.selected { stroke: var(--post-blue); stroke-width: 3px; filter: drop-shadow(0 4px 8px rgba(91,117,134,0.25)); }
+  .node.hidden { display: none; }
+  .node.dimmed .node-circle { opacity: 0.2; filter: none; }
+  .node.dimmed .node-label, .node.dimmed .node-label-en { opacity: 0.2; }
+  .node.editable .node-circle { stroke-dasharray: 4,3; }
 
-  #edge-tooltip{position:absolute; pointer-events:none; background:var(--ink); color:var(--paper); font-family:'EB Garamond', serif; font-size:13px; padding:5px 10px; border-radius:3px; opacity:0; transition:opacity .12s; white-space:nowrap; z-index:10;}
+  .edge { fill: none; stroke-width: 1.5px; opacity: 0.8; }
+  .edge.hidden { display: none; }
+  .edge.dimmed { opacity: 0.08; }
+  .edge-hit { fill: none; stroke: transparent; stroke-width: 16px; cursor: pointer; }
 
-  #loading{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:var(--paper); font-style:italic; color:var(--ink-soft); font-size:15px; z-index:20;}
+  #edge-tooltip { position: absolute; pointer-events: none; background: #fff; color: var(--ink); font-family: 'EB Garamond', serif; font-size: 13.5px; padding: 8px 14px; border-radius: 8px; box-shadow: 0 4px 12px rgba(84,72,62,0.1); opacity: 0; transition: opacity .15s; white-space: nowrap; z-index: 10; border: 1px solid var(--hairline); }
+  #loading { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(252,250,245,0.8); font-style: italic; color: var(--ink-soft); font-size: 16px; z-index: 20; letter-spacing: 1px; backdrop-filter: blur(2px); }
 
-  /* ---------- Side panel ---------- */
-  #panel{width:320px; flex:none; border-left:1px solid var(--hairline); background:var(--panel-bg); padding:22px 20px; overflow-y:auto;}
-  #panel .faction-tag{display:inline-block; font-size:11px; padding:3px 9px; border-radius:3px; color:#fff; margin-bottom:12px;}
-  #panel h2{font-family:'Playfair Display', serif; font-size:22px; margin:0 0 2px 0; line-height:1.25;}
-  #panel .name-en{font-style:italic; color:var(--ink-soft); font-size:13.5px; margin-bottom:14px;}
-  #panel .desc{font-size:14.5px; line-height:1.7; color:var(--ink); margin-bottom:18px; padding-bottom:16px; border-bottom:1px solid var(--hairline);}
-  #panel .rel-title{font-family:'Playfair Display', serif; font-size:14px; font-weight:600; margin-bottom:9px; color:var(--ink-soft);}
-  #panel .rel-list{list-style:none; padding:0; margin:0 0 8px 0;}
-  #panel .rel-list li{font-size:13.5px; line-height:1.6; padding:6px 0; border-bottom:1px dotted var(--hairline);}
-  #panel .rel-name{cursor:pointer; font-weight:600;}
-  #panel .rel-name:hover{text-decoration:underline;}
-  #panel .rel-label{color:var(--ink-soft); font-size:12.5px;}
-  #panel-empty{color:var(--ink-soft); font-style:italic; font-size:14px; line-height:1.7; margin-top:30px;}
+  /* ---------- Side panel (清新信笺排版) ---------- */
+  #panel { 
+    width: 340px; flex: none; border-left: 1px solid var(--hairline); 
+    background: var(--panel-bg); padding: 30px 26px; overflow-y: auto;
+    box-shadow: -2px 0 12px rgba(0,0,0,0.02);
+  }
+  #panel .faction-tag { display: inline-block; font-size: 11.5px; font-family: 'EB Garamond', serif; padding: 4px 12px; border-radius: 12px; color: #fff; margin-bottom: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+  #panel h2 { font-family: 'Playfair Display', serif; font-size: 26px; margin: 0 0 6px 0; line-height: 1.2; color: var(--ink); }
+  #panel .name-en { font-style: italic; color: var(--post-blue); font-size: 14.5px; margin-bottom: 20px; }
+  
+  #panel .desc { font-size: 15px; line-height: 1.8; color: var(--ink); margin-bottom: 26px; padding-bottom: 24px; border-bottom: 1px solid #f0ebe1; text-align: justify; }
+  
+  #panel .rel-title { font-family: 'Playfair Display', serif; font-size: 16px; font-weight: 600; font-style: italic; margin-bottom: 14px; color: var(--ok); }
+  #panel .rel-list { list-style: none; padding: 0; margin: 0 0 8px 0; }
+  #panel .rel-list li { font-size: 14px; line-height: 1.6; padding: 8px 0; border-bottom: 1px dashed #f0ebe1; display: flex; align-items: baseline; }
+  #panel .rel-name { cursor: pointer; font-weight: 600; color: var(--ink); margin: 0 4px; transition: color 0.2s; }
+  #panel .rel-name:hover { color: var(--post-blue); text-decoration: underline; text-underline-offset: 3px; }
+  #panel .rel-label { color: var(--ink-soft); font-size: 13px; font-style: italic; }
+  #panel-empty { color: var(--ink-soft); font-style: italic; font-size: 15px; line-height: 1.8; margin-top: 50px; text-align: center; }
 
   /* ---------- Edit form ---------- */
-  .field{margin-bottom:13px;}
-  .field label{display:block; font-size:12px; color:var(--ink-soft); margin-bottom:4px;}
-  .field input[type=text], .field select, .field textarea{
-    width:100%; font-family:'EB Garamond', serif; font-size:14px; padding:6px 8px;
-    border:1px solid var(--hairline); border-radius:3px; background:#fff; color:var(--ink);
+  .field { margin-bottom: 18px; }
+  .field label { display: block; font-size: 13.5px; font-style: italic; color: var(--post-blue); margin-bottom: 6px; }
+  .field input[type=text], .field select, .field textarea {
+    width: 100%; font-family: 'EB Garamond', serif; font-size: 14.5px; padding: 10px 12px;
+    border: 1px solid var(--hairline); border-radius: 8px; background: #fff; color: var(--ink);
+    transition: all 0.2s;
   }
-  .field textarea{resize:vertical; min-height:64px;}
-  .field input[type=range]{width:100%;}
-  .field .range-val{font-size:12px; color:var(--ink-soft);}
-  .form-actions{display:flex; gap:8px; margin:14px 0 18px 0;}
+  .field input[type=text]:focus, .field select:focus, .field textarea:focus { outline: none; border-color: var(--ok); box-shadow: 0 0 0 3px rgba(115,140,98,0.1); }
+  .field textarea { resize: vertical; min-height: 80px; line-height: 1.6; }
+  .field input[type=range] { width: 100%; accent-color: var(--ok); }
+  .field .range-val { font-size: 13px; color: var(--ink-soft); font-family: monospace; }
+  .form-actions { display: flex; gap: 10px; margin: 20px 0 24px 0; }
 
-  .rel-edit-row{display:flex; flex-wrap:wrap; gap:6px; align-items:center; padding:8px 0; border-bottom:1px dotted var(--hairline);}
-  .rel-edit-row select, .rel-edit-row input[type=text]{
-    font-family:'EB Garamond', serif; font-size:12.5px; padding:4px 6px; border:1px solid var(--hairline); border-radius:3px; background:#fff;
+  .rel-edit-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 12px 0; border-bottom: 1px dashed var(--hairline); }
+  .rel-edit-row select, .rel-edit-row input[type=text] {
+    font-family: 'EB Garamond', serif; font-size: 13.5px; padding: 6px 10px; border: 1px solid var(--hairline); border-radius: 6px; background: #fff;
   }
-  .rel-edit-row .rel-target{flex:1 1 110px; min-width:90px;}
-  .rel-edit-row .rel-type{flex:1 1 90px; min-width:80px;}
-  .rel-edit-row .rel-label-input{flex:1 1 100%; min-width:120px;}
-  .rel-edit-row .del-btn{background:none; border:none; color:var(--danger); cursor:pointer; font-size:15px; line-height:1; padding:2px 4px;}
+  .rel-edit-row .rel-target { flex: 1 1 110px; min-width: 90px; }
+  .rel-edit-row .rel-type { flex: 1 1 90px; min-width: 80px; }
+  .rel-edit-row .rel-label-input { flex: 1 1 100%; min-width: 120px; font-style: italic; }
+  .rel-edit-row .del-btn { background: none; border: none; color: var(--danger); cursor: pointer; font-size: 18px; line-height: 1; padding: 4px; opacity: 0.6; transition: opacity 0.2s; }
+  .rel-edit-row .del-btn:hover { opacity: 1; }
 
   /* ---------- Style settings modal ---------- */
-  #modal-overlay{position:fixed; inset:0; background:rgba(20,15,8,0.45); display:none; align-items:center; justify-content:center; z-index:50;}
-  #modal-overlay.show{display:flex;}
-  #modal-box{background:var(--panel-bg); border:1px solid var(--hairline); border-radius:5px; width:480px; max-width:92vw; max-height:82vh; overflow-y:auto; padding:22px 24px;}
-  #modal-box h3{font-family:'Playfair Display', serif; margin:0 0 14px 0; font-size:18px;}
-  #modal-box h4{font-size:13px; color:var(--ink-soft); margin:18px 0 8px 0;}
-  .style-row{display:flex; align-items:center; gap:9px; margin-bottom:8px;}
-  .style-row input[type=color]{width:32px; height:26px; padding:0; border:1px solid var(--hairline); border-radius:3px; background:none; cursor:pointer;}
-  .style-row input[type=text]{flex:1; font-family:'EB Garamond', serif; font-size:13.5px; padding:5px 8px; border:1px solid var(--hairline); border-radius:3px;}
-  .style-row label.dash-check{font-size:12px; display:flex; align-items:center; gap:4px; white-space:nowrap;}
+  #modal-overlay { position: fixed; inset: 0; background: rgba(84,72,62,0.4); display: none; align-items: center; justify-content: center; z-index: 50; backdrop-filter: blur(3px); }
+  #modal-overlay.show { display: flex; }
+  #modal-box { background: var(--panel-bg); border: 1px solid var(--hairline); border-radius: 12px; width: 500px; max-width: 92vw; max-height: 82vh; overflow-y: auto; padding: 32px; box-shadow: 0 12px 40px rgba(0,0,0,0.15); }
+  #modal-box h3 { font-family: 'Playfair Display', serif; margin: 0 0 16px 0; font-size: 22px; color: var(--post-blue); border-bottom: 1px dashed var(--hairline); padding-bottom: 12px; }
+  #modal-box h4 { font-size: 14.5px; font-style: italic; color: var(--ok); margin: 24px 0 12px 0; }
+  .style-row { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+  .style-row input[type=color] { width: 36px; height: 36px; padding: 0; border: 2px solid #fff; border-radius: 50%; background: none; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+  .style-row input[type=text] { flex: 1; font-family: 'EB Garamond', serif; font-size: 14.5px; padding: 8px 12px; border: 1px solid var(--hairline); border-radius: 6px; }
+  .style-row label.dash-check { font-size: 13.5px; font-style: italic; display: flex; align-items: center; gap: 6px; white-space: nowrap; color: var(--ink-soft); cursor: pointer; }
 </style>
 </head>
 <body>
@@ -194,19 +263,19 @@
 <script>
 /* ============ 默认数据 ============ */
 const defaultFactions = {
-  brooke:    { label:'布鲁克家族',        color:'#8c3b2e' },
-  casaubon:  { label:'卡苏朋与拉迪斯拉夫', color:'#5d4266' },
-  vincy:     { label:'文西—莱德盖特',      color:'#b1873c' },
-  garth:     { label:'加尔斯家族',        color:'#425c40' },
-  bulstrode: { label:'布尔斯特罗德阵营',   color:'#374a5c' },
-  town:      { label:'其他镇民',         color:'#8a6a52' }
+  brooke:    { label:'布鲁克家族',        color:'#b56a5d' },
+  casaubon:  { label:'卡苏朋与拉迪斯拉夫', color:'#5b7586' },
+  vincy:     { label:'文西—莱德盖特',      color:'#d4a755' },
+  garth:     { label:'加尔斯家族',        color:'#738c62' },
+  bulstrode: { label:'布尔斯特罗德阵营',   color:'#8a7d71' },
+  town:      { label:'其他镇民',         color:'#c4a88b' }
 };
 const defaultRelations = {
-  family:     { label:'血缘',      color:'#5c4d3a', dashed:false },
-  marriage:   { label:'夫妻/情感', color:'#b1873c', dashed:false },
-  rivalry:    { label:'敌对',      color:'#8c3b2e', dashed:false },
-  support:    { label:'庇护/支持', color:'#425c40', dashed:false },
-  temptation: { label:'阻挠/诱惑', color:'#5d4266', dashed:true  }
+  family:     { label:'血缘',      color:'#8c8076', dashed:false },
+  marriage:   { label:'夫妻/情感', color:'#d4a755', dashed:false },
+  rivalry:    { label:'敌对',      color:'#b56a5d', dashed:false },
+  support:    { label:'庇护/支持', color:'#738c62', dashed:false },
+  temptation: { label:'阻挠/诱惑', color:'#5b7586', dashed:true  }
 };
 const defaultNodes = [
   { id:'dorothea',    name:'多萝西娅·布鲁克', nameEn:'Dorothea Brooke', faction:'brooke', r:32,
@@ -528,7 +597,7 @@ function renderReadPanel(id){
         const otherId = sId===id ? tId : sId;
         const other = nodeById[otherId];
         if(!other) return '';
-        return `<li><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${appData.relations[l.type].color};margin-right:6px;"></span>与 <b data-goto="${other.id}" class="rel-name">${other.name}</b>：<span class="rel-label">${appData.relations[l.type].label} · ${l.label||''}</span></li>`;
+        return `<li><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${appData.relations[l.type].color};margin-right:8px; flex:none;"></span>与 <b data-goto="${other.id}" class="rel-name">${other.name}</b>：<span class="rel-label">${appData.relations[l.type].label} · ${l.label||''}</span></li>`;
       }).join('')}
     </ul>`;
   panel.querySelectorAll('[data-goto]').forEach(el=> el.addEventListener('click', ()=> selectNode(el.dataset.goto)));
@@ -653,6 +722,20 @@ document.getElementById('btn-add-node').addEventListener('click', ()=>{
 document.getElementById('btn-reset').addEventListener('click', ()=>{
   if(!confirm('确定要放弃全部修改，恢复为默认的人物关系图吗？此操作不可撤销。')) return;
   appData = cloneDefaults();
+  
+  // 重置时一并应用雀起乡配色
+  const lrColors = {
+    brooke: '#b56a5d',    // 砖红/玫瑰
+    casaubon: '#5b7586',  // 邮局蓝
+    vincy: '#d4a755',     // 麦秆金
+    garth: '#738c62',     // 草甸绿
+    bulstrode: '#8a7d71', // 灰褐
+    town: '#c4a88b'       // 原木色
+  };
+  Object.keys(appData.factions).forEach(k => {
+    if(lrColors[k]) appData.factions[k].color = lrColors[k];
+  });
+  
   buildLegend();
   rebuildGraph();
   selectNode(appData.nodes[0].id);
@@ -702,6 +785,20 @@ document.getElementById('modal-overlay').addEventListener('click', (e)=>{
 async function init(){
   await loadData();
   document.getElementById('loading').style.display = 'none';
+  
+  // 覆盖默认的深色，换成雀起乡清新的阵营色
+  const lrColors = {
+    brooke: '#b56a5d',    // 砖红/玫瑰
+    casaubon: '#5b7586',  // 邮局蓝
+    vincy: '#d4a755',     // 麦秆金
+    garth: '#738c62',     // 草甸绿
+    bulstrode: '#8a7d71', // 灰褐
+    town: '#c4a88b'       // 原木色
+  };
+  Object.keys(appData.factions).forEach(k => {
+    if(lrColors[k]) appData.factions[k].color = lrColors[k];
+  });
+  
   buildLegend();
   rebuildGraph();
   selectNode(appData.nodes[0] ? appData.nodes[0].id : null);
