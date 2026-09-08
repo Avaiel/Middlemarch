@@ -10,56 +10,41 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
 <style>
   :root {
-    /* 雀起乡与烛镇：田园、信笺、阳光、草甸 */
-    --paper: #fcfaf5;      /* 干净的日光奶油白 */
-    --paper-deep: #f2eadc; /* 质朴的亚麻布色 */
-    --ink: #54483e;        /* 柔和的深棕色（如同老邮局的墨水） */
-    --ink-soft: #8c8076;   /* 褪色的浅褐色 */
-    --hairline: #d4cbb8;   /* 浅卡其/麦秆色 */
-    --panel-bg: #ffffff;   /* 纯净的信纸底色 */
-    
-    /* 乡村自然点缀色 */
-    --danger: #b56a5d; /* 野玫瑰/砖红 */
-    --ok: #738c62;     /* 雀起乡的草甸绿 */
-    --warn: #d4a755;   /* 阳光与麦穗黄 */
-    --post-blue: #5b7586; /* 烛镇邮局蓝 */
+    --paper: #fcfaf5;
+    --paper-deep: #f2eadc;
+    --ink: #54483e;
+    --ink-soft: #8c8076;
+    --hairline: #d4cbb8;
+    --panel-bg: #ffffff;
+    --danger: #b56a5d;
+    --ok: #738c62;
+    --warn: #d4a755;
+    --post-blue: #5b7586;
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; height: 100%; background: #e8e1d5; }
-  body { 
-    font-family: 'EB Garamond', Georgia, serif; 
-    color: var(--ink); 
-    overflow: hidden;
-  }
+  body { font-family: 'EB Garamond', Georgia, serif; color: var(--ink); overflow: hidden; }
   
   #app {
     height: 100vh; display: flex; flex-direction: column;
-    /* 晨光般的柔和渐变 */
     background: 
       radial-gradient(circle at top left, rgba(255,255,255,1) 0%, transparent 70%),
       radial-gradient(circle at bottom right, rgba(212,167,85,0.08) 0%, transparent 60%),
       var(--paper);
     border: 1px solid var(--hairline);
-    border-radius: 12px; /* 柔和的窗框感圆角 */
-    margin: 8px; 
-    height: calc(100vh - 16px);
+    border-radius: 12px; margin: 8px; height: calc(100vh - 16px);
     box-shadow: 0 8px 24px rgba(84, 72, 62, 0.08);
   }
 
-  /* ---------- Toolbar (邮局柜台风格) ---------- */
+  /* ---------- Toolbar ---------- */
   #toolbar {
     display: flex; align-items: center; gap: 18px; padding: 14px 24px;
-    border-bottom: 2px dashed var(--hairline); /* 缝线质感 */
+    border-bottom: 2px dashed var(--hairline);
     background: linear-gradient(to right, var(--paper-deep), var(--paper));
-    border-radius: 12px 12px 0 0;
-    flex-wrap: wrap; row-gap: 8px;
+    border-radius: 12px 12px 0 0; flex-wrap: wrap; row-gap: 8px;
   }
   .brand { display: flex; flex-direction: column; margin-right: 6px; white-space: nowrap; }
-  .brand .cn { 
-    font-family: 'Playfair Display', serif; font-weight: 600; font-size: 20px; 
-    color: var(--post-blue); /* 邮局蓝 */
-    letter-spacing: 0.5px;
-  }
+  .brand .cn { font-family: 'Playfair Display', serif; font-weight: 600; font-size: 20px; color: var(--post-blue); letter-spacing: 0.5px; }
   .brand .en { font-size: 13px; color: var(--ok); font-style: italic; margin-top: 2px; }
   
   .legend-group { display: flex; align-items: center; gap: 9px; padding: 5px 14px; border-left: 1px dotted var(--hairline); flex-wrap: wrap; }
@@ -76,14 +61,11 @@
   
   #search { 
     font-family: 'EB Garamond', serif; font-size: 14px; padding: 6px 14px; 
-    border: 1px solid var(--hairline); border-radius: 20px; 
-    background: #fff; color: var(--ink); width: 160px; outline: none;
-    box-shadow: inset 0 1px 3px rgba(0,0,0,0.02);
-    transition: all 0.2s ease;
+    border: 1px solid var(--hairline); border-radius: 20px; background: #fff; color: var(--ink); width: 140px; outline: none;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.02); transition: all 0.2s ease;
   }
   #search:focus { border-color: var(--post-blue); box-shadow: 0 0 0 3px rgba(91,117,134,0.1); }
 
-  /* 柔润的田园风药丸按钮 */
   .btn {
     font-family: 'EB Garamond', serif; font-size: 13.5px; padding: 6px 16px; border-radius: 20px;
     border: 1px solid var(--hairline); background: #fff; color: var(--ink);
@@ -105,51 +87,29 @@
 
   #edit-toolbar { display: none; align-items: center; gap: 10px; padding: 0 14px; border-left: 1px dotted var(--hairline); }
   #edit-toolbar.show { display: flex; }
+  .sync-group { display: flex; gap: 6px; border-left: 1px dotted var(--hairline); padding-left: 14px; }
 
-  /* ---------- Main area ---------- */
+  /* ---------- Main area (点阵信纸背景) ---------- */
   main { flex: 1; display: flex; min-height: 0; border-radius: 0 0 12px 12px; overflow: hidden; }
-  
-  /* 调整容器：使用纯 CSS 绘制复古邮局点阵信纸底纹 */
   #graph-wrap { 
-    flex: 1; 
-    position: relative; 
-    min-width: 0; 
-    overflow: hidden; 
-    
-    /* 生成细腻的圆点网格（信纸/手账风格） */
+    flex: 1; position: relative; min-width: 0; overflow: hidden; 
     background-image: radial-gradient(rgba(84, 72, 62, 0.12) 1.2px, transparent 1.2px);
-    background-size: 28px 28px;
-    background-position: center center;
+    background-size: 28px 28px; background-position: center center;
   }
-  
   #graph-wrap::before {
-    content: "";
-    position: absolute;
-    inset: 0; 
-    /* 增加纸张边缘微微泛暗的晕影（Vignette），让背景有光影立体感且不单调 */
+    content: ""; position: absolute; inset: 0; 
     background: radial-gradient(ellipse at center, transparent 45%, rgba(84, 72, 62, 0.08) 120%);
-    pointer-events: none; /* 穿透鼠标点击，不影响拖拽节点 */
-    z-index: 0;
+    pointer-events: none; z-index: 0;
   }
-
-  svg#graph { 
-    width: 100%; 
-    height: 100%; 
-    display: block; 
-    cursor: grab; 
-    position: relative;
-    z-index: 1; 
-  }
+  svg#graph { width: 100%; height: 100%; display: block; cursor: grab; position: relative; z-index: 1; }
   svg#graph:active { cursor: grabbing; }
 
-  /* 节点视觉：更加通透清爽 */
   .node-label { font-family: 'Playfair Display', serif; font-size: 13px; font-weight: 600; fill: var(--ink); pointer-events: none; paint-order: stroke; stroke: rgba(252,250,245,0.9); stroke-width: 4px; stroke-linejoin: round; }
   .node-label-en { font-family: 'EB Garamond', serif; font-style: italic; font-size: 11px; fill: var(--post-blue); pointer-events: none; paint-order: stroke; stroke: rgba(252,250,245,0.9); stroke-width: 3px; stroke-linejoin: round; }
   .node-circle { stroke: #fff; stroke-width: 2px; cursor: pointer; filter: drop-shadow(0 2px 4px rgba(84,72,62,0.12)); transition: filter 0.2s; }
   .node-circle.selected { stroke: var(--post-blue); stroke-width: 3px; filter: drop-shadow(0 4px 8px rgba(91,117,134,0.25)); }
   .node.hidden { display: none; }
-  .node.dimmed .node-circle { opacity: 0.2; filter: none; }
-  .node.dimmed .node-label, .node.dimmed .node-label-en { opacity: 0.2; }
+  .node.dimmed .node-circle, .node.dimmed .node-label, .node.dimmed .node-label-en { opacity: 0.2; filter: none; }
   .node.editable .node-circle { stroke-dasharray: 4,3; }
 
   .edge { fill: none; stroke-width: 1.5px; opacity: 0.8; }
@@ -160,18 +120,12 @@
   #edge-tooltip { position: absolute; pointer-events: none; background: #fff; color: var(--ink); font-family: 'EB Garamond', serif; font-size: 13.5px; padding: 8px 14px; border-radius: 8px; box-shadow: 0 4px 12px rgba(84,72,62,0.1); opacity: 0; transition: opacity .15s; white-space: nowrap; z-index: 10; border: 1px solid var(--hairline); }
   #loading { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(252,250,245,0.8); font-style: italic; color: var(--ink-soft); font-size: 16px; z-index: 20; letter-spacing: 1px; backdrop-filter: blur(2px); }
 
-  /* ---------- Side panel (清新信笺排版) ---------- */
-  #panel { 
-    width: 340px; flex: none; border-left: 1px solid var(--hairline); 
-    background: var(--panel-bg); padding: 30px 26px; overflow-y: auto;
-    box-shadow: -2px 0 12px rgba(0,0,0,0.02);
-  }
+  /* ---------- Side panel ---------- */
+  #panel { width: 340px; flex: none; border-left: 1px solid var(--hairline); background: var(--panel-bg); padding: 30px 26px; overflow-y: auto; box-shadow: -2px 0 12px rgba(0,0,0,0.02); }
   #panel .faction-tag { display: inline-block; font-size: 11.5px; font-family: 'EB Garamond', serif; padding: 4px 12px; border-radius: 12px; color: #fff; margin-bottom: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
   #panel h2 { font-family: 'Playfair Display', serif; font-size: 26px; margin: 0 0 6px 0; line-height: 1.2; color: var(--ink); }
   #panel .name-en { font-style: italic; color: var(--post-blue); font-size: 14.5px; margin-bottom: 20px; }
-  
   #panel .desc { font-size: 15px; line-height: 1.8; color: var(--ink); margin-bottom: 26px; padding-bottom: 24px; border-bottom: 1px solid #f0ebe1; text-align: justify; }
-  
   #panel .rel-title { font-family: 'Playfair Display', serif; font-size: 16px; font-weight: 600; font-style: italic; margin-bottom: 14px; color: var(--ok); }
   #panel .rel-list { list-style: none; padding: 0; margin: 0 0 8px 0; }
   #panel .rel-list li { font-size: 14px; line-height: 1.6; padding: 8px 0; border-bottom: 1px dashed #f0ebe1; display: flex; align-items: baseline; }
@@ -185,19 +139,15 @@
   .field label { display: block; font-size: 13.5px; font-style: italic; color: var(--post-blue); margin-bottom: 6px; }
   .field input[type=text], .field select, .field textarea {
     width: 100%; font-family: 'EB Garamond', serif; font-size: 14.5px; padding: 10px 12px;
-    border: 1px solid var(--hairline); border-radius: 8px; background: #fff; color: var(--ink);
-    transition: all 0.2s;
+    border: 1px solid var(--hairline); border-radius: 8px; background: #fff; color: var(--ink); transition: all 0.2s;
   }
   .field input[type=text]:focus, .field select:focus, .field textarea:focus { outline: none; border-color: var(--ok); box-shadow: 0 0 0 3px rgba(115,140,98,0.1); }
   .field textarea { resize: vertical; min-height: 80px; line-height: 1.6; }
   .field input[type=range] { width: 100%; accent-color: var(--ok); }
   .field .range-val { font-size: 13px; color: var(--ink-soft); font-family: monospace; }
   .form-actions { display: flex; gap: 10px; margin: 20px 0 24px 0; }
-
   .rel-edit-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 12px 0; border-bottom: 1px dashed var(--hairline); }
-  .rel-edit-row select, .rel-edit-row input[type=text] {
-    font-family: 'EB Garamond', serif; font-size: 13.5px; padding: 6px 10px; border: 1px solid var(--hairline); border-radius: 6px; background: #fff;
-  }
+  .rel-edit-row select, .rel-edit-row input[type=text] { font-family: 'EB Garamond', serif; font-size: 13.5px; padding: 6px 10px; border: 1px solid var(--hairline); border-radius: 6px; background: #fff; }
   .rel-edit-row .rel-target { flex: 1 1 110px; min-width: 90px; }
   .rel-edit-row .rel-type { flex: 1 1 90px; min-width: 80px; }
   .rel-edit-row .rel-label-input { flex: 1 1 100%; min-width: 120px; font-style: italic; }
@@ -231,8 +181,15 @@
       <button class="btn small danger" id="btn-reset">↺ 重置数据</button>
     </div>
     <div id="toolbar-right">
-      <span id="hint">滚轮缩放 · 拖拽平移 · 点人物看简介</span>
+      <span id="hint">点人物看简介 · 滚轮缩放平移</span>
       <input id="search" type="text" placeholder="搜索人物…">
+      
+      <!-- 数据同步功能区 -->
+      <div class="sync-group">
+        <button class="btn small" id="btn-export" title="导出数据用于跨设备同步">📤 导出</button>
+        <button class="btn small" id="btn-import" title="导入其他设备的数据">📥 导入</button>
+      </div>
+
       <span id="save-status"><span class="dot"></span><span id="save-status-text">已保存</span></span>
       <button class="btn" id="btn-edit-toggle">✎ 编辑</button>
     </div>
@@ -279,40 +236,23 @@ const defaultRelations = {
   temptation: { label:'阻挠/诱惑', color:'#5b7586', dashed:true  }
 };
 const defaultNodes = [
-  { id:'dorothea',    name:'多萝西娅·布鲁克', nameEn:'Dorothea Brooke', faction:'brooke', r:32,
-    desc:'渴望以己之力成就一番事业的乡绅之女。先嫁学究卡苏朋，婚姻枯槁；丧偶后不顾世俗眼光，与拉迪斯拉夫结合，最终在平凡生活里安放理想。' },
-  { id:'casaubon',    name:'爱德华·卡苏朋', nameEn:'Edward Casaubon', faction:'casaubon', r:26,
-    desc:'埋首于《万有神话索隐》的年迈学者。以婚姻换来一位侍读兼继承人，却因猜忌拉迪斯拉夫，在遗嘱中留下羞辱性的条款。' },
-  { id:'willladislaw',name:'威尔·拉迪斯拉夫', nameEn:'Will Ladislaw', faction:'casaubon', r:26,
-    desc:'卡苏朋家道中落的表侄，才情洋溢，身世却带着阴影。深爱多萝西娅，宁可放弃财产也不愿被误会为图谋婚产。' },
-  { id:'celia',       name:'西莉亚·布鲁克', nameEn:'Celia Brooke', faction:'brooke', r:19,
-    desc:'多萝西娅务实开朗的妹妹，不理解姐姐的理想主义，安稳嫁给詹姆斯爵士，过着传统而满足的乡绅太太生活。' },
-  { id:'jameschettam',name:'詹姆斯·切特姆爵士', nameEn:'Sir James Chettam', faction:'brooke', r:19,
-    desc:'忠厚的邻家绅士，本想迎娶多萝西娅，被拒后转娶西莉亚，此后始终以姐夫的身份守护、关切着多萝西娅。' },
-  { id:'mrbrooke',    name:'布鲁克先生', nameEn:'Mr. Brooke', faction:'brooke', r:19,
-    desc:'多萝西娅姐妹的监护人叔叔，见识浅薄却爱附庸风雅，一度雇拉迪斯拉夫办报参选，闹出不少笑话。' },
-  { id:'lydgate',     name:'特提乌斯·莱德盖特', nameEn:'Tertius Lydgate', faction:'vincy', r:32,
-    desc:'胸怀医学改革抱负的年轻医生。一时冲动娶了虚荣的罗莎蒙德，又因债务卷入布尔斯特罗德的丑闻，理想被一点点消磨殆尽。' },
-  { id:'rosamond',    name:'罗莎蒙德·文西', nameEn:'Rosamond Vincy', faction:'vincy', r:25,
-    desc:'米德尔马契公认的美人，虚荣而精于算计。婚后不断透支丈夫的信任与财力，一步步将莱德盖特拖入困境。' },
-  { id:'fred',        name:'弗雷德·文西', nameEn:'Fred Vincy', faction:'vincy', r:23,
-    desc:'文西家不务正业的独子，曾指望继承费瑟斯通的遗产度日。在玛丽的督促下痛改前非，跟随加尔斯学做正经营生。' },
-  { id:'mrvincy',     name:'文西先生', nameEn:'Mr. Vincy', faction:'vincy', r:17,
-    desc:'米德尔马契现任市长，制造厂主，一心盼着儿女攀附上层，却对弗雷德的挥霍长期睁一只眼闭一只眼。' },
-  { id:'mary',        name:'玛丽·加尔斯', nameEn:'Mary Garth', faction:'garth', r:23,
-    desc:'朴实聪慧的加尔斯家长女，拒绝在费瑟斯通临终前偷改遗嘱，坚守原则。她的爱情，以弗雷德脱胎换骨为条件。' },
-  { id:'calebgarth',  name:'凯莱布·加尔斯', nameEn:'Caleb Garth', faction:'garth', r:19,
-    desc:'诚恳能干的土地代理人，是全书道德的定盘星。收留并教导弗雷德做事，也是女儿玛丽爱情的隐形考官。' },
-  { id:'bulstrode',   name:'尼古拉斯·布尔斯特罗德', nameEn:'Nicholas Bulstrode', faction:'bulstrode', r:26,
-    desc:'表面虔诚的银行家，早年靠隐瞒身世与侵吞遗产起家。旧日同伙拉弗尔斯的出现，最终掀翻了他体面的伪装。' },
-  { id:'mrsbulstrode',name:'哈丽特·布尔斯特罗德', nameEn:'Mrs. Bulstrode', faction:'bulstrode', r:19,
-    desc:'文西先生的姐姐，布尔斯特罗德忠贞的妻子。丈夫丑闻曝光后，她褪去珠宝素服相伴，是全书最动人的坚守。' },
-  { id:'raffles',     name:'约翰·拉弗尔斯', nameEn:'John Raffles', faction:'bulstrode', r:17,
-    desc:'游荡潦倒的旧日投机者，握着布尔斯特罗德不堪的过去，靠此讹诈度日，最终的死亡也成了一桩悬案。' },
-  { id:'featherstone',name:'彼得·费瑟斯通', nameEn:'Peter Featherstone', faction:'town', r:19,
-    desc:'坐拥田产的乖僻老人，临终前用一份藏起来的遗嘱，戏弄了所有等着分家产的亲戚，其中就包括弗雷德。' },
-  { id:'farebrother', name:'法拉布拉泽牧师', nameEn:'Rev. Camden Farebrother', faction:'town', r:17,
-    desc:'清贫却豁达的牧师，暗恋玛丽，却主动为弗雷德说好话成全二人，也是莱德盖特危难时少有的挚友。' }
+  { id:'dorothea',    name:'多萝西娅·布鲁克', nameEn:'Dorothea Brooke', faction:'brooke', r:32, desc:'渴望以己之力成就一番事业的乡绅之女。先嫁学究卡苏朋，婚姻枯槁；丧偶后不顾世俗眼光，与拉迪斯拉夫结合，最终在平凡生活里安放理想。' },
+  { id:'casaubon',    name:'爱德华·卡苏朋', nameEn:'Edward Casaubon', faction:'casaubon', r:26, desc:'埋首于《万有神话索隐》的年迈学者。以婚姻换来一位侍读兼继承人，却因猜忌拉迪斯拉夫，在遗嘱中留下羞辱性的条款。' },
+  { id:'willladislaw',name:'威尔·拉迪斯拉夫', nameEn:'Will Ladislaw', faction:'casaubon', r:26, desc:'卡苏朋家道中落的表侄，才情洋溢，身世却带着阴影。深爱多萝西娅，宁可放弃财产也不愿被误会为图谋婚产。' },
+  { id:'celia',       name:'西莉亚·布鲁克', nameEn:'Celia Brooke', faction:'brooke', r:19, desc:'多萝西娅务实开朗的妹妹，不理解姐姐的理想主义，安稳嫁给詹姆斯爵士，过着传统而满足的乡绅太太生活。' },
+  { id:'jameschettam',name:'詹姆斯·切特姆爵士', nameEn:'Sir James Chettam', faction:'brooke', r:19, desc:'忠厚的邻家绅士，本想迎娶多萝西娅，被拒后转娶西莉亚，此后始终以姐夫的身份守护、关切着多萝西娅。' },
+  { id:'mrbrooke',    name:'布鲁克先生', nameEn:'Mr. Brooke', faction:'brooke', r:19, desc:'多萝西娅姐妹的监护人叔叔，见识浅薄却爱附庸风雅，一度雇拉迪斯拉夫办报参选，闹出不少笑话。' },
+  { id:'lydgate',     name:'特提乌斯·莱德盖特', nameEn:'Tertius Lydgate', faction:'vincy', r:32, desc:'胸怀医学改革抱负的年轻医生。一时冲动娶了虚荣的罗莎蒙德，又因债务卷入布尔斯特罗德的丑闻，理想被一点点消磨殆尽。' },
+  { id:'rosamond',    name:'罗莎蒙德·文西', nameEn:'Rosamond Vincy', faction:'vincy', r:25, desc:'米德尔马契公认的美人，虚荣而精于算计。婚后不断透支丈夫的信任与财力，一步步将莱德盖特拖入困境。' },
+  { id:'fred',        name:'弗雷德·文西', nameEn:'Fred Vincy', faction:'vincy', r:23, desc:'文西家不务正业的独子，曾指望继承费瑟斯通的遗产度日。在玛丽的督促下痛改前非，跟随加尔斯学做正经营生。' },
+  { id:'mrvincy',     name:'文西先生', nameEn:'Mr. Vincy', faction:'vincy', r:17, desc:'米德尔马契现任市长，制造厂主，一心盼着儿女攀附上层，却对弗雷德的挥霍长期睁一只眼闭一只眼。' },
+  { id:'mary',        name:'玛丽·加尔斯', nameEn:'Mary Garth', faction:'garth', r:23, desc:'朴实聪慧的加尔斯家长女，拒绝在费瑟斯通临终前偷改遗嘱，坚守原则。她的爱情，以弗雷德脱胎换骨为条件。' },
+  { id:'calebgarth',  name:'凯莱布·加尔斯', nameEn:'Caleb Garth', faction:'garth', r:19, desc:'诚恳能干的土地代理人，是全书道德的定盘星。收留并教导弗雷德做事，也是女儿玛丽爱情的隐形考官。' },
+  { id:'bulstrode',   name:'尼古拉斯·布尔斯特罗德', nameEn:'Nicholas Bulstrode', faction:'bulstrode', r:26, desc:'表面虔诚的银行家，早年靠隐瞒身世与侵吞遗产起家。旧日同伙拉弗尔斯的出现，最终掀翻了他体面的伪装。' },
+  { id:'mrsbulstrode',name:'哈丽特·布尔斯特罗德', nameEn:'Mrs. Bulstrode', faction:'bulstrode', r:19, desc:'文西先生的姐姐，布尔斯特罗德忠贞的妻子。丈夫丑闻曝光后，她褪去珠宝素服相伴，是全书最动人的坚守。' },
+  { id:'raffles',     name:'约翰·拉弗尔斯', nameEn:'John Raffles', faction:'bulstrode', r:17, desc:'游荡潦倒的旧日投机者，握着布尔斯特罗德不堪的过去，靠此讹诈度日，最终的死亡也成了一桩悬案。' },
+  { id:'featherstone',name:'彼得·费瑟斯通', nameEn:'Peter Featherstone', faction:'town', r:19, desc:'坐拥田产的乖僻老人，临终前用一份藏起来的遗嘱，戏弄了所有等着分家产的亲戚，其中就包括弗雷德。' },
+  { id:'farebrother', name:'法拉布拉泽牧师', nameEn:'Rev. Camden Farebrother', faction:'town', r:17, desc:'清贫却豁达的牧师，暗恋玛丽，却主动为弗雷德说好话成全二人，也是莱德盖特危难时少有的挚友。' }
 ];
 const defaultLinks = [
   { source:'dorothea', target:'casaubon',     type:'marriage',   label:'夫妻·痛苦的结合' },
@@ -380,7 +320,7 @@ factionKeys.forEach((k,i)=>{
   factionCenter[k] = { x: centerX + ringR*Math.cos(angle), y: centerY + ringR*Math.sin(angle) };
 });
 
-/* ============ 存储 ============ */
+/* ============ 存储与同步 ============ */
 async function loadData(){
   let saved = localStorage.getItem(STORAGE_KEY);
   if(saved){
@@ -418,6 +358,36 @@ function scheduleSave(){
     }catch(e){ setSaveStatus('error'); }
   }, 500);
 }
+
+// 导出与导入（手动同步）功能
+document.getElementById('btn-export').addEventListener('click', ()=>{
+  const dataString = JSON.stringify(serializeData());
+  // Base64 编码，防止复制时丢失格式
+  const encoded = btoa(encodeURIComponent(dataString));
+  navigator.clipboard.writeText(encoded).then(() => {
+    alert('✅ 数据已成功复制到剪贴板！\n\n请将这串代码粘贴并保存在你的 Notion 数据库、Google Keep 或备忘录中。\n换设备时点击「导入」按钮粘贴即可恢复配置。');
+  }).catch(() => {
+    prompt('你的浏览器不支持自动复制，请手动复制以下代码，并存入 Notion 或备忘录中：', encoded);
+  });
+});
+
+document.getElementById('btn-import').addEventListener('click', ()=>{
+  const input = prompt('📥 跨设备导入\n\n请在此处粘贴你之前备份在 Notion / 备忘录 中的配置代码：');
+  if(!input) return;
+  try {
+    const decoded = decodeURIComponent(atob(input));
+    const parsedData = JSON.parse(decoded);
+    if(parsedData && parsedData.nodes && parsedData.links) {
+      localStorage.setItem(STORAGE_KEY, decoded);
+      alert('🎉 导入成功，正在刷新页面...');
+      location.reload();
+    } else {
+      alert('⚠️ 导入失败：你粘贴的代码内容有误或已损坏。');
+    }
+  } catch(e) {
+    alert('⚠️ 导入失败：无法解析代码，请确保粘贴的代码完整无误。');
+  }
+});
 
 /* ============ 图例 ============ */
 function buildLegend(){
@@ -724,7 +694,6 @@ document.getElementById('btn-reset').addEventListener('click', ()=>{
   if(!confirm('确定要放弃全部修改，恢复为默认的人物关系图吗？此操作不可撤销。')) return;
   appData = cloneDefaults();
   
-  // 重置时一并应用雀起乡配色
   const lrColors = {
     brooke: '#b56a5d',    // 砖红/玫瑰
     casaubon: '#5b7586',  // 邮局蓝
@@ -787,7 +756,6 @@ async function init(){
   await loadData();
   document.getElementById('loading').style.display = 'none';
   
-  // 覆盖默认的深色，换成雀起乡清新的阵营色
   const lrColors = {
     brooke: '#b56a5d',    // 砖红/玫瑰
     casaubon: '#5b7586',  // 邮局蓝
