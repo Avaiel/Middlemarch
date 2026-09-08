@@ -109,24 +109,25 @@
   /* ---------- Main area ---------- */
   main { flex: 1; display: flex; min-height: 0; border-radius: 0 0 12px 12px; overflow: hidden; }
   
-  /* 调整容器并添加乡村背景图水印 */
+  /* 调整容器：使用纯 CSS 绘制复古邮局点阵信纸底纹 */
   #graph-wrap { 
     flex: 1; 
     position: relative; 
     min-width: 0; 
     overflow: hidden; 
+    
+    /* 生成细腻的圆点网格（信纸/手账风格） */
+    background-image: radial-gradient(rgba(84, 72, 62, 0.12) 1.2px, transparent 1.2px);
+    background-size: 28px 28px;
+    background-position: center center;
   }
   
   #graph-wrap::before {
     content: "";
     position: absolute;
     inset: 0; 
-    background-image: url('image_d9fc57.png'); /* 乡村图景文件名 */
-    background-position: center bottom; 
-    background-repeat: no-repeat;
-    background-size: 70%; 
-    opacity: 0.15; /* 水印透明度 */
-    mix-blend-mode: multiply; /* 正片叠底，让线条像印在纸上 */
+    /* 增加纸张边缘微微泛暗的晕影（Vignette），让背景有光影立体感且不单调 */
+    background: radial-gradient(ellipse at center, transparent 45%, rgba(84, 72, 62, 0.08) 120%);
     pointer-events: none; /* 穿透鼠标点击，不影响拖拽节点 */
     z-index: 0;
   }
