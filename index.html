@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>《米德尔马契》人物关系图谱</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<style>
+  :root{
+    --paper:#efe6cf;
+    --paper-deep:#e6d9b8;
+    --ink:#2c2117;
+    --ink-soft:#5c4d3a;
+    --hairline:#b7a06e;
+    --panel-bg:#f7f0dc;
+    --danger:#8c3b2e;
+    --ok:#425c40;
+    --warn:#b1873c;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;height:100%;background:var(--paper);}
+  body{font-family:'EB Garamond', Georgia, serif; color:var(--ink); overflow:hidden;}
+  #app{
+    height:100vh; display:flex; flex-direction:column;
+    background:
+      radial-gradient(ellipse at top left, rgba(255,255,255,0.25), transparent 55%),
+      radial-gradient(ellipse at bottom right, rgba(0,0,0,0.06), transparent 60%),
+      var(--paper);
+    border:1px solid var(--hairline);
+  }
+
+  /* ---------- Toolbar ---------- */
+  #toolbar{
+    display:flex; align-items:center; gap:18px; padding:12px 20px;
+    border-bottom:1px solid var(--hairline); background:var(--paper-deep);
+    flex-wrap:wrap; row-gap:8px;
+  }
+  .brand{display:flex; flex-direction:column; margin-right:6px; white-space:nowrap;}
+  .brand .cn{font-family:'Playfair Display', serif; font-weight:700; font-size:18px;}
+  .brand .en{font-size:12px; color:var(--ink-soft); font-style:italic;}
+  .legend-group{display:flex; align-items:center; gap:9px; padding:5px 11px; border-left:1px solid var(--hairline); flex-wrap:wrap;}
+  .legend-title{font-size:12px; color:var(--ink-soft); margin-right:1px; white-space:nowrap;}
+  .chip{display:flex; align-items:center; gap:5px; font-size:12px; cursor:pointer; user-select:none; padding:3px 6px; border-radius:3px; white-space:nowrap;}
+  .chip:hover{background:rgba(0,0,0,0.05);}
+  .chip input{accent-color:var(--ink-soft); margin:0;}
+  .swatch{width:10px;height:10px;border-radius:50%;flex:none;border:1px solid rgba(0,0,0,0.25);}
+  .line-sample{width:16px;height:0;border-top:2.5px solid; flex:none;}
+  .line-sample.dashed{border-top-style:dashed;}
+
+  #toolbar-right{margin-left:auto; display:flex; align-items:center; gap:12px; flex-wrap:wrap;}
+  #hint{font-size:11px; color:var(--ink-soft); white-space:nowrap;}
+  #search{font-family:'EB Garamond', serif; font-size:13.5px; padding:5px 9px; border:1px solid var(--hairline); border-radius:3px; background:var(--paper); color:var(--ink); width:140px; outline:none;}
+  #search:focus{border-color:var(--ink-soft);}
+
+  .btn{
+    font-family:'EB Garamond', serif; font-size:13px; padding:6px 12px; border-radius:3px;
+    border:1px solid var(--ink-soft); background:var(--paper); color:var(--ink);
+    cursor:pointer; white-space:nowrap;
+  }
+  .btn:hover{background:var(--paper-deep);}
+  .btn.primary{background:var(--ink-soft); color:var(--paper); border-color:var(--ink-soft);}
+  .btn.primary:hover{background:var(--ink);}
+  .btn.danger{border-color:var(--danger); color:var(--danger); background:transparent;}
+  .btn.danger:hover{background:rgba(140,59,46,0.1);}
+  .btn.small{font-size:12px; padding:4px 9px;}
+
+  #save-status{font-size:11.5px; color:var(--ink-soft); display:flex; align-items:center; gap:5px; white-space:nowrap;}
+  #save-status .dot{width:7px;height:7px;border-radius:50%;background:var(--ok);}
+  #save-status.saving .dot{background:var(--warn);}
+  #save-status.error .dot{background:var(--danger);}
+
+  #edit-toolbar{display:none; align-items:center; gap:8px; padding:0 11px; border-left:1px solid var(--hairline);}
+  #edit-toolbar.show{display:flex;}
+
+  /* ---------- Main area ---------- */
+  main{flex:1; display:flex; min-height:0;}
+  #graph-wrap{flex:1; position:relative; min-width:0;}
+  svg#graph{width:100%; height:100%; display:block; cursor:grab;}
+  svg#graph:active{cursor:grabbing;}
+
+  .node-label{font-family:'Playfair Display', serif; font-size:12.5px; font-weight:600; fill:var(--ink); pointer-events:none; paint-order:stroke; stroke:var(--paper); stroke-width:3px;}
+  .node-label-en{font-family:'EB Garamond', serif; font-style:italic; font-size:9.5px; fill:var(--ink-soft); pointer-events:none; paint-order:stroke; stroke:var(--paper); stroke-width:3px;}
+  .node-circle{stroke:#2c2117; stroke-width:1.2px; cursor:pointer;}
+  .node-circle.selected{stroke:#2c2117; stroke-width:2.8px;}
+  .node.hidden{display:none;}
+  .node.dimmed .node-circle{opacity:0.15;}
+  .node.dimmed .node-label,.node.dimmed .node-label-en{opacity:0.15;}
+  .node.editable .node-circle{stroke-dasharray:2,2;}
+
+  .edge{fill:none; stroke-width:1.6px;}
+  .edge.hidden{display:none;}
+  .edge.dimmed{opacity:0.08;}
+  .edge-hit{fill:none; stroke:transparent; stroke-width:14px; cursor:pointer;}
+
+  #edge-tooltip{position:absolute; pointer-events:none; background:var(--ink); color:var(--paper); font-family:'EB Garamond', serif; font-size:13px; padding:5px 10px; border-radius:3px; opacity:0; transition:opacity .12s; white-space:nowrap; z-index:10;}
+
+  #loading{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:var(--paper); font-style:italic; color:var(--ink-soft); font-size:15px; z-index:20;}
+
+  /* ---------- Side panel ---------- */
+  #panel{width:320px; flex:none; border-left:1px solid var(--hairline); background:var(--panel-bg); padding:22px 20px; overflow-y:auto;}
+  #panel .faction-tag{display:inline-block; font-size:11px; padding:3px 9px; border-radius:3px; color:#fff; margin-bottom:12px;}
+  #panel h2{font-family:'Playfair Display', serif; font-size:22px; margin:0 0 2px 0; line-height:1.25;}
+  #panel .name-en{font-style:italic; color:var(--ink-soft); font-size:13.5px; margin-bottom:14px;}
+  #panel .desc{font-size:14.5px; line-height:1.7; color:var(--ink); margin-bottom:18px; padding-bottom:16px; border-bottom:1px solid var(--hairline);}
+  #panel .rel-title{font-family:'Playfair Display', serif; font-size:14px; font-weight:600; margin-bottom:9px; color:var(--ink-soft);}
+  #panel .rel-list{list-style:none; padding:0; margin:0 0 8px 0;}
+  #panel .rel-list li{font-size:13.5px; line-height:1.6; padding:6px 0; border-bottom:1px dotted var(--hairline);}
+  #panel .rel-name{cursor:pointer; font-weight:600;}
+  #panel .rel-name:hover{text-decoration:underline;}
+  #panel .rel-label{color:var(--ink-soft); font-size:12.5px;}
+  #panel-empty{color:var(--ink-soft); font-style:italic; font-size:14px; line-height:1.7; margin-top:30px;}
+
+  /* ---------- Edit form ---------- */
+  .field{margin-bottom:13px;}
+  .field label{display:block; font-size:12px; color:var(--ink-soft); margin-bottom:4px;}
+  .field input[type=text], .field select, .field textarea{
+    width:100%; font-family:'EB Garamond', serif; font-size:14px; padding:6px 8px;
+    border:1px solid var(--hairline); border-radius:3px; background:#fff; color:var(--ink);
+  }
+  .field textarea{resize:vertical; min-height:64px;}
+  .field input[type=range]{width:100%;}
+  .field .range-val{font-size:12px; color:var(--ink-soft);}
+  .form-actions{display:flex; gap:8px; margin:14px 0 18px 0;}
+
+  .rel-edit-row{display:flex; flex-wrap:wrap; gap:6px; align-items:center; padding:8px 0; border-bottom:1px dotted var(--hairline);}
+  .rel-edit-row select, .rel-edit-row input[type=text]{
+    font-family:'EB Garamond', serif; font-size:12.5px; padding:4px 6px; border:1px solid var(--hairline); border-radius:3px; background:#fff;
+  }
+  .rel-edit-row .rel-target{flex:1 1 110px; min-width:90px;}
+  .rel-edit-row .rel-type{flex:1 1 90px; min-width:80px;}
+  .rel-edit-row .rel-label-input{flex:1 1 100%; min-width:120px;}
+  .rel-edit-row .del-btn{background:none; border:none; color:var(--danger); cursor:pointer; font-size:15px; line-height:1; padding:2px 4px;}
+
+  /* ---------- Style settings modal ---------- */
+  #modal-overlay{position:fixed; inset:0; background:rgba(20,15,8,0.45); display:none; align-items:center; justify-content:center; z-index:50;}
+  #modal-overlay.show{display:flex;}
+  #modal-box{background:var(--panel-bg); border:1px solid var(--hairline); border-radius:5px; width:480px; max-width:92vw; max-height:82vh; overflow-y:auto; padding:22px 24px;}
+  #modal-box h3{font-family:'Playfair Display', serif; margin:0 0 14px 0; font-size:18px;}
+  #modal-box h4{font-size:13px; color:var(--ink-soft); margin:18px 0 8px 0;}
+  .style-row{display:flex; align-items:center; gap:9px; margin-bottom:8px;}
+  .style-row input[type=color]{width:32px; height:26px; padding:0; border:1px solid var(--hairline); border-radius:3px; background:none; cursor:pointer;}
+  .style-row input[type=text]{flex:1; font-family:'EB Garamond', serif; font-size:13.5px; padding:5px 8px; border:1px solid var(--hairline); border-radius:3px;}
+  .style-row label.dash-check{font-size:12px; display:flex; align-items:center; gap:4px; white-space:nowrap;}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="toolbar">
+    <div class="brand">
+      <span class="cn">《米德尔马契》人物关系图谱</span>
+      <span class="en">Middlemarch &mdash; George Eliot</span>
+    </div>
+    <div class="legend-group" id="faction-legend"><span class="legend-title">阵营：</span></div>
+    <div class="legend-group" id="relation-legend"><span class="legend-title">关系：</span></div>
+    <div id="edit-toolbar">
+      <button class="btn small" id="btn-add-node">+ 新增人物</button>
+      <button class="btn small" id="btn-style">🎨 样式</button>
+      <button class="btn small danger" id="btn-reset">↺ 重置数据</button>
+    </div>
+    <div id="toolbar-right">
+      <span id="hint">滚轮缩放 · 拖拽平移 · 点人物看简介</span>
+      <input id="search" type="text" placeholder="搜索人物…">
+      <span id="save-status"><span class="dot"></span><span id="save-status-text">已保存</span></span>
+      <button class="btn" id="btn-edit-toggle">✎ 编辑</button>
+    </div>
+  </div>
+
+  <main>
+    <div id="graph-wrap">
+      <div id="loading">加载中…</div>
+      <svg id="graph"></svg>
+      <div id="edge-tooltip"></div>
+    </div>
+    <aside id="panel"></aside>
+  </main>
+</div>
+
+<div id="modal-overlay">
+  <div id="modal-box">
+    <h3>样式设置</h3>
+    <h4>阵营颜色与名称</h4>
+    <div id="modal-factions"></div>
+    <h4>关系颜色与名称</h4>
+    <div id="modal-relations"></div>
+    <div class="form-actions">
+      <button class="btn primary" id="btn-modal-close">完成</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============ 默认数据 ============ */
+const defaultFactions = {
+  brooke:    { label:'布鲁克家族',        color:'#8c3b2e' },
+  casaubon:  { label:'卡苏朋与拉迪斯拉夫', color:'#5d4266' },
+  vincy:     { label:'文西—莱德盖特',      color:'#b1873c' },
+  garth:     { label:'加尔斯家族',        color:'#425c40' },
+  bulstrode: { label:'布尔斯特罗德阵营',   color:'#374a5c' },
+  town:      { label:'其他镇民',         color:'#8a6a52' }
+};
+const defaultRelations = {
+  family:     { label:'血缘',      color:'#5c4d3a', dashed:false },
+  marriage:   { label:'夫妻/情感', color:'#b1873c', dashed:false },
+  rivalry:    { label:'敌对',      color:'#8c3b2e', dashed:false },
+  support:    { label:'庇护/支持', color:'#425c40', dashed:false },
+  temptation: { label:'阻挠/诱惑', color:'#5d4266', dashed:true  }
+};
+const defaultNodes = [
+  { id:'dorothea',    name:'多萝西娅·布鲁克', nameEn:'Dorothea Brooke', faction:'brooke', r:32,
+    desc:'渴望以己之力成就一番事业的乡绅之女。先嫁学究卡苏朋，婚姻枯槁；丧偶后不顾世俗眼光，与拉迪斯拉夫结合，最终在平凡生活里安放理想。' },
+  { id:'casaubon',    name:'爱德华·卡苏朋', nameEn:'Edward Casaubon', faction:'casaubon', r:26,
+    desc:'埋首于《万有神话索隐》的年迈学者。以婚姻换来一位侍读兼继承人，却因猜忌拉迪斯拉夫，在遗嘱中留下羞辱性的条款。' },
+  { id:'willladislaw',name:'威尔·拉迪斯拉夫', nameEn:'Will Ladislaw', faction:'casaubon', r:26,
+    desc:'卡苏朋家道中落的表侄，才情洋溢，身世却带着阴影。深爱多萝西娅，宁可放弃财产也不愿被误会为图谋婚产。' },
+  { id:'celia',       name:'西莉亚·布鲁克', nameEn:'Celia Brooke', faction:'brooke', r:19,
+    desc:'多萝西娅务实开朗的妹妹，不理解姐姐的理想主义，安稳嫁给詹姆斯爵士，过着传统而满足的乡绅太太生活。' },
+  { id:'jameschettam',name:'詹姆斯·切特姆爵士', nameEn:'Sir James Chettam', faction:'brooke', r:19,
+    desc:'忠厚的邻家绅士，本想迎娶多萝西娅，被拒后转娶西莉亚，此后始终以姐夫的身份守护、关切着多萝西娅。' },
+  { id:'mrbrooke',    name:'布鲁克先生', nameEn:'Mr. Brooke', faction:'brooke', r:19,
+    desc:'多萝西娅姐妹的监护人叔叔，见识浅薄却爱附庸风雅，一度雇拉迪斯拉夫办报参选，闹出不少笑话。' },
+  { id:'lydgate',     name:'特提乌斯·莱德盖特', nameEn:'Tertius Lydgate', faction:'vincy', r:32,
+    desc:'胸怀医学改革抱负的年轻医生。一时冲动娶了虚荣的罗莎蒙德，又因债务卷入布尔斯特罗德的丑闻，理想被一点点消磨殆尽。' },
+  { id:'rosamond',    name:'罗莎蒙德·文西', nameEn:'Rosamond Vincy', faction:'vincy', r:25,
+    desc:'米德尔马契公认的美人，虚荣而精于算计。婚后不断透支丈夫的信任与财力，一步步将莱德盖特拖入困境。' },
+  { id:'fred',        name:'弗雷德·文西', nameEn:'Fred Vincy', faction:'vincy', r:23,
+    desc:'文西家不务正业的独子，曾指望继承费瑟斯通的遗产度日。在玛丽的督促下痛改前非，跟随加尔斯学做正经营生。' },
+  { id:'mrvincy',     name:'文西先生', nameEn:'Mr. Vincy', faction:'vincy', r:17,
+    desc:'米德尔马契现任市长，制造厂主，一心盼着儿女攀附上层，却对弗雷德的挥霍长期睁一只眼闭一只眼。' },
+  { id:'mary',        name:'玛丽·加尔斯', nameEn:'Mary Garth', faction:'garth', r:23,
+    desc:'朴实聪慧的加尔斯家长女，拒绝在费瑟斯通临终前偷改遗嘱，坚守原则。她的爱情，以弗雷德脱胎换骨为条件。' },
+  { id:'calebgarth',  name:'凯莱布·加尔斯', nameEn:'Caleb Garth', faction:'garth', r:19,
+    desc:'诚恳能干的土地代理人，是全书道德的定盘星。收留并教导弗雷德做事，也是女儿玛丽爱情的隐形考官。' },
+  { id:'bulstrode',   name:'尼古拉斯·布尔斯特罗德', nameEn:'Nicholas Bulstrode', faction:'bulstrode', r:26,
+    desc:'表面虔诚的银行家，早年靠隐瞒身世与侵吞遗产起家。旧日同伙拉弗尔斯的出现，最终掀翻了他体面的伪装。' },
+  { id:'mrsbulstrode',name:'哈丽特·布尔斯特罗德', nameEn:'Mrs. Bulstrode', faction:'bulstrode', r:19,
+    desc:'文西先生的姐姐，布尔斯特罗德忠贞的妻子。丈夫丑闻曝光后，她褪去珠宝素服相伴，是全书最动人的坚守。' },
+  { id:'raffles',     name:'约翰·拉弗尔斯', nameEn:'John Raffles', faction:'bulstrode', r:17,
+    desc:'游荡潦倒的旧日投机者，握着布尔斯特罗德不堪的过去，靠此讹诈度日，最终的死亡也成了一桩悬案。' },
+  { id:'featherstone',name:'彼得·费瑟斯通', nameEn:'Peter Featherstone', faction:'town', r:19,
+    desc:'坐拥田产的乖僻老人，临终前用一份藏起来的遗嘱，戏弄了所有等着分家产的亲戚，其中就包括弗雷德。' },
+  { id:'farebrother', name:'法拉布拉泽牧师', nameEn:'Rev. Camden Farebrother', faction:'town', r:17,
+    desc:'清贫却豁达的牧师，暗恋玛丽，却主动为弗雷德说好话成全二人，也是莱德盖特危难时少有的挚友。' }
+];
+const defaultLinks = [
+  { source:'dorothea', target:'casaubon',     type:'marriage',   label:'夫妻·痛苦的结合' },
+  { source:'dorothea', target:'willladislaw', type:'marriage',   label:'夫妻·迟来的真爱' },
+  { source:'dorothea', target:'celia',        type:'family',     label:'姐妹' },
+  { source:'dorothea', target:'mrbrooke',     type:'family',     label:'叔侄·监护' },
+  { source:'dorothea', target:'jameschettam', type:'temptation', label:'曾属意迎娶，未成' },
+  { source:'dorothea', target:'lydgate',      type:'support',    label:'理解与声援' },
+  { source:'dorothea', target:'rosamond',     type:'support',    label:'劝和·化解误会' },
+  { source:'casaubon', target:'willladislaw', type:'rivalry',    label:'猜忌·遗嘱阻挠' },
+  { source:'celia',    target:'jameschettam', type:'marriage',   label:'夫妻' },
+  { source:'mrbrooke', target:'willladislaw', type:'support',    label:'雇佣办报' },
+  { source:'lydgate',  target:'rosamond',     type:'marriage',   label:'夫妻·理想幻灭' },
+  { source:'rosamond', target:'fred',         type:'family',     label:'兄妹' },
+  { source:'rosamond', target:'willladislaw', type:'temptation', label:'单方倾慕·引发误会' },
+  { source:'fred',     target:'mary',         type:'marriage',   label:'青梅竹马·终成眷属' },
+  { source:'fred',     target:'mrvincy',      type:'family',     label:'父子' },
+  { source:'fred',     target:'featherstone', type:'family',     label:'甥舅·遗产落空' },
+  { source:'fred',     target:'calebgarth',   type:'support',    label:'收留·教导做事' },
+  { source:'mary',     target:'calebgarth',   type:'family',     label:'父女' },
+  { source:'mary',     target:'featherstone', type:'temptation', label:'临终托付·拒绝销毁遗嘱' },
+  { source:'lydgate',  target:'bulstrode',    type:'rivalry',    label:'借贷资助·终被丑闻拖累' },
+  { source:'bulstrode',target:'mrsbulstrode', type:'marriage',   label:'夫妻·丑闻后仍相守' },
+  { source:'bulstrode',target:'raffles',      type:'rivalry',    label:'勒索·旧日秘密' },
+  { source:'bulstrode',target:'willladislaw', type:'temptation', label:'隐瞒身世秘密，愧疚偿还' },
+  { source:'mrvincy',  target:'mrsbulstrode', type:'family',     label:'兄妹' },
+  { source:'raffles',  target:'lydgate',      type:'rivalry',    label:'临终牵连，引发医德质疑' },
+  { source:'farebrother', target:'lydgate',   type:'support',    label:'挚友' },
+  { source:'farebrother', target:'fred',      type:'support',    label:'成全弗雷德与玛丽' }
+];
+
+function cloneDefaults(){
+  return {
+    nodes: JSON.parse(JSON.stringify(defaultNodes)),
+    links: JSON.parse(JSON.stringify(defaultLinks)),
+    factions: JSON.parse(JSON.stringify(defaultFactions)),
+    relations: JSON.parse(JSON.stringify(defaultRelations))
+  };
+}
+
+const STORAGE_KEY = 'middlemarch-graph-v1';
+let appData = null;
+let editMode = false;
+let selectedId = null;
+let nodeById = {};
+let saveTimer = null;
+let simulation = null;
+let nodeSel = null, edgeSel = null;
+let linkAutoId = 0;
+
+/* ============ 画布基础设置 ============ */
+const W = 1000, H = 620;
+const svg = d3.select('#graph').attr('viewBox', [0,0,W,H]).attr('preserveAspectRatio','xMidYMid meet');
+const g = svg.append('g');
+const edgeLayer = g.append('g');
+const nodeLayer = g.append('g');
+svg.call(d3.zoom().scaleExtent([0.35,3]).on('zoom', (e)=> g.attr('transform', e.transform)));
+svg.on('click', ()=> selectNode(null));
+
+const factionKeys = Object.keys(defaultFactions);
+const centerX = W/2, centerY = H/2 - 6, ringR = 210;
+const factionCenter = {};
+factionKeys.forEach((k,i)=>{
+  const angle = (i / factionKeys.length) * 2*Math.PI - Math.PI/2;
+  factionCenter[k] = { x: centerX + ringR*Math.cos(angle), y: centerY + ringR*Math.sin(angle) };
+});
+
+/* ============ 存储 ============ */
+async function loadData(){
+  let saved = localStorage.getItem(STORAGE_KEY);
+  if(saved){
+    try{ appData = JSON.parse(saved); }catch(e){ appData = cloneDefaults(); }
+  } else {
+    appData = cloneDefaults();
+  }
+  if(!appData.factions) appData.factions = JSON.parse(JSON.stringify(defaultFactions));
+  if(!appData.relations) appData.relations = JSON.parse(JSON.stringify(defaultRelations));
+}
+
+function serializeData(){
+  return {
+    nodes: appData.nodes.map(n=>({id:n.id,name:n.name,nameEn:n.nameEn,faction:n.faction,r:n.r,desc:n.desc})),
+    links: appData.links.map(l=>({source:(l.source&&l.source.id)||l.source, target:(l.target&&l.target.id)||l.target, type:l.type, label:l.label})),
+    factions: appData.factions,
+    relations: appData.relations
+  };
+}
+
+function setSaveStatus(state){
+  const el = document.getElementById('save-status');
+  const text = document.getElementById('save-status-text');
+  el.className = state;
+  text.textContent = state==='saving' ? '保存中…' : state==='error' ? '保存失败' : '已保存';
+}
+
+function scheduleSave(){
+  setSaveStatus('saving');
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(()=>{
+    try{
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(serializeData()));
+      setSaveStatus('saved');
+    }catch(e){ setSaveStatus('error'); }
+  }, 500);
+}
+
+/* ============ 图例 ============ */
+function buildLegend(){
+  const prevFactionState = {};
+  document.querySelectorAll('input[data-faction]').forEach(cb=> prevFactionState[cb.dataset.faction]=cb.checked);
+  const prevRelationState = {};
+  document.querySelectorAll('input[data-relation]').forEach(cb=> prevRelationState[cb.dataset.relation]=cb.checked);
+
+  const fLegend = d3.select('#faction-legend');
+  fLegend.selectAll('label.chip').remove();
+  Object.entries(appData.factions).forEach(([key,f])=>{
+    const chip = fLegend.append('label').attr('class','chip');
+    chip.append('input').attr('type','checkbox')
+      .property('checked', prevFactionState[key] !== undefined ? prevFactionState[key] : true)
+      .attr('data-faction',key).on('change', applyFilters);
+    chip.append('span').attr('class','swatch').style('background', f.color);
+    chip.append('span').text(f.label);
+  });
+
+  const rLegend = d3.select('#relation-legend');
+  rLegend.selectAll('label.chip').remove();
+  Object.entries(appData.relations).forEach(([key,r])=>{
+    const chip = rLegend.append('label').attr('class','chip');
+    chip.append('input').attr('type','checkbox')
+      .property('checked', prevRelationState[key] !== undefined ? prevRelationState[key] : true)
+      .attr('data-relation',key).on('change', applyFilters);
+    chip.append('span').attr('class','line-sample' + (r.dashed?' dashed':'')).style('border-color', r.color);
+    chip.append('span').text(r.label);
+  });
+}
+
+/* ============ 渲染（结构性重建，保留已有位置）============ */
+const dragBehavior = d3.drag()
+  .on('start', (event,d)=>{ if(!event.active) simulation.alphaTarget(0.25).restart(); d.fx=d.x; d.fy=d.y; })
+  .on('drag', (event,d)=>{ d.fx=event.x; d.fy=event.y; })
+  .on('end', (event,d)=>{ if(!event.active) simulation.alphaTarget(0); d.fx=null; d.fy=null; });
+
+function rebuildGraph(){
+  if(simulation) simulation.stop();
+
+  const prevPos = {};
+  appData.nodes.forEach(n=>{ if(n.x!=null) prevPos[n.id] = {x:n.x, y:n.y}; });
+
+  appData.links.forEach(l=>{ l.source = (l.source && l.source.id) || l.source; l.target = (l.target && l.target.id) || l.target; });
+  appData.links.forEach(l=>{ if(l._id==null) l._id = 'e'+(linkAutoId++); });
+
+  appData.nodes.forEach(n=>{
+    const c = factionCenter[n.faction] || {x:centerX,y:centerY};
+    if(prevPos[n.id]){ n.x = prevPos[n.id].x; n.y = prevPos[n.id].y; }
+    else { n.x = c.x + (Math.random()-0.5)*40; n.y = c.y + (Math.random()-0.5)*40; }
+  });
+
+  nodeById = {};
+  appData.nodes.forEach(n=> nodeById[n.id]=n);
+
+  edgeLayer.selectAll('*').remove();
+  nodeLayer.selectAll('*').remove();
+
+  const edgeGroups = edgeLayer.selectAll('g.edge-g').data(appData.links, d=>d._id).join('g').attr('class','edge-g');
+  const edgePath = edgeGroups.append('path').attr('class', d=>'edge edge-'+d.type)
+    .attr('stroke', d=>appData.relations[d.type].color)
+    .attr('stroke-dasharray', d=>appData.relations[d.type].dashed ? '5,4' : null);
+  const edgeHit = edgeGroups.append('path').attr('class','edge-hit')
+    .on('mouseenter', (event,d)=>{
+      const s = nodeById[d.source.id||d.source], t = nodeById[d.target.id||d.target];
+      d3.select('#edge-tooltip').style('opacity',1)
+        .html(`<b>${s?s.name:'?'}</b> — <b>${t?t.name:'?'}</b><br><span style="color:${appData.relations[d.type].color}">●</span> ${appData.relations[d.type].label}：${d.label||''}`);
+    })
+    .on('mousemove', (event)=>{
+      const [x,y] = d3.pointer(event, document.getElementById('graph-wrap'));
+      d3.select('#edge-tooltip').style('left', (x+16)+'px').style('top', (y+10)+'px');
+    })
+    .on('mouseleave', ()=> d3.select('#edge-tooltip').style('opacity',0));
+  edgeSel = edgeGroups;
+
+  nodeSel = nodeLayer.selectAll('g.node').data(appData.nodes, d=>d.id).join('g')
+    .attr('class','node')
+    .call(dragBehavior)
+    .on('click', (event,d)=>{ event.stopPropagation(); selectNode(d.id); });
+  nodeSel.append('circle').attr('class','node-circle');
+  nodeSel.append('text').attr('class','node-label').attr('text-anchor','middle');
+  nodeSel.append('text').attr('class','node-label-en').attr('text-anchor','middle');
+  refreshAllNodeVisuals();
+
+  simulation = d3.forceSimulation(appData.nodes)
+    .force('link', d3.forceLink(appData.links).id(d=>d.id).distance(l => 95 + (l.type==='family'?0:10)).strength(0.55))
+    .force('charge', d3.forceManyBody().strength(-260))
+    .force('collide', d3.forceCollide().radius(d=>d.r+22))
+    .force('x', d3.forceX(d=>(factionCenter[d.faction]||{x:centerX}).x).strength(0.10))
+    .force('y', d3.forceY(d=>(factionCenter[d.faction]||{y:centerY}).y).strength(0.10))
+    .on('tick', ticked);
+
+  applyFilters();
+  nodeSel.classed('editable', editMode);
+}
+
+function ticked(){
+  edgeSel.select('.edge').attr('d', d => `M${d.source.x},${d.source.y} L${d.target.x},${d.target.y}`);
+  edgeSel.select('.edge-hit').attr('d', d => `M${d.source.x},${d.source.y} L${d.target.x},${d.target.y}`);
+  nodeSel.attr('transform', d => `translate(${d.x},${d.y})`);
+}
+
+function refreshAllNodeVisuals(){
+  nodeSel.select('.node-circle').attr('r', d=>d.r).attr('fill', d=>appData.factions[d.faction].color)
+    .classed('selected', d=>d.id===selectedId);
+  nodeSel.select('.node-label').attr('y', d=>d.r+15).text(d=>d.name);
+  nodeSel.select('.node-label-en').attr('y', d=>d.r+27).text(d=>d.nameEn||'');
+}
+
+function refreshNodeVisual(id){
+  const sel = nodeSel.filter(d=>d.id===id);
+  const d = nodeById[id];
+  sel.select('.node-circle').attr('r', d.r).attr('fill', appData.factions[d.faction].color);
+  sel.select('.node-label').attr('y', d.r+15).text(d.name);
+  sel.select('.node-label-en').attr('y', d.r+27).text(d.nameEn||'');
+}
+
+function refreshEdgeVisual(link){
+  edgeSel.filter(d=>d._id===link._id).select('.edge')
+    .attr('class','edge edge-'+link.type)
+    .attr('stroke', appData.relations[link.type].color)
+    .attr('stroke-dasharray', appData.relations[link.type].dashed ? '5,4' : null);
+}
+
+/* ============ 过滤 & 搜索 ============ */
+let activeSearch = '';
+function applyFilters(){
+  const activeFactions = new Set();
+  document.querySelectorAll('input[data-faction]').forEach(cb=>{ if(cb.checked) activeFactions.add(cb.dataset.faction); });
+  const activeRelations = new Set();
+  document.querySelectorAll('input[data-relation]').forEach(cb=>{ if(cb.checked) activeRelations.add(cb.dataset.relation); });
+  const q = activeSearch.trim().toLowerCase();
+
+  nodeSel.classed('hidden', d => !activeFactions.has(d.faction));
+  nodeSel.classed('dimmed', d => {
+    if(!activeFactions.has(d.faction)) return false;
+    if(!q) return false;
+    return !(d.name.toLowerCase().includes(q) || (d.nameEn||'').toLowerCase().includes(q));
+  });
+
+  edgeSel.select('.edge').classed('hidden', d=>{
+    const s = nodeById[d.source.id||d.source], t = nodeById[d.target.id||d.target];
+    if(!s||!t) return true;
+    return !activeRelations.has(d.type) || !activeFactions.has(s.faction) || !activeFactions.has(t.faction);
+  });
+  edgeSel.select('.edge').classed('dimmed', d=>{
+    if(!q) return false;
+    const s = nodeById[d.source.id||d.source], t = nodeById[d.target.id||d.target];
+    if(!s||!t) return false;
+    const match = s.name.toLowerCase().includes(q) || (s.nameEn||'').toLowerCase().includes(q) ||
+                  t.name.toLowerCase().includes(q) || (t.nameEn||'').toLowerCase().includes(q);
+    return !match;
+  });
+}
+document.getElementById('search').addEventListener('input', (e)=>{ activeSearch = e.target.value; applyFilters(); });
+
+/* ============ 选中 / 面板 ============ */
+function selectNode(id){
+  selectedId = id;
+  if(nodeSel) nodeSel.select('.node-circle').classed('selected', d=>d.id===id);
+  if(!id){ editMode ? renderEmptyEditPanel() : renderEmptyPanel(); return; }
+  editMode ? renderEditPanel(id) : renderReadPanel(id);
+}
+
+function renderReadPanel(id){
+  const d = nodeById[id];
+  const rels = appData.links.filter(l => (l.source.id||l.source)===id || (l.target.id||l.target)===id);
+  const panel = document.getElementById('panel');
+  panel.innerHTML = `
+    <span class="faction-tag" style="background:${appData.factions[d.faction].color}">${appData.factions[d.faction].label}</span>
+    <h2>${d.name}</h2>
+    <div class="name-en">${d.nameEn||''}</div>
+    <div class="desc">${d.desc||''}</div>
+    <div class="rel-title">人物关系</div>
+    <ul class="rel-list">
+      ${rels.map(l=>{
+        const sId = l.source.id||l.source, tId = l.target.id||l.target;
+        const otherId = sId===id ? tId : sId;
+        const other = nodeById[otherId];
+        if(!other) return '';
+        return `<li><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${appData.relations[l.type].color};margin-right:6px;"></span>与 <b data-goto="${other.id}" class="rel-name">${other.name}</b>：<span class="rel-label">${appData.relations[l.type].label} · ${l.label||''}</span></li>`;
+      }).join('')}
+    </ul>`;
+  panel.querySelectorAll('[data-goto]').forEach(el=> el.addEventListener('click', ()=> selectNode(el.dataset.goto)));
+}
+
+function renderEmptyPanel(){
+  document.getElementById('panel').innerHTML = `<div id="panel-empty">点击左侧任意人物，查看其在《米德尔马契》中的身份与人物关系。</div>`;
+}
+function renderEmptyEditPanel(){
+  document.getElementById('panel').innerHTML = `<div id="panel-empty">点击左侧人物即可编辑，或点击工具栏的"+ 新增人物"添加新角色。</div>`;
+}
+
+function renderEditPanel(id){
+  const d = nodeById[id];
+  const factionOptions = Object.entries(appData.factions).map(([k,f])=>`<option value="${k}" ${k===d.faction?'selected':''}>${f.label}</option>`).join('');
+  const rels = appData.links.filter(l => (l.source.id||l.source)===id || (l.target.id||l.target)===id);
+  const otherNodeOptions = (exceptOtherId)=> appData.nodes.filter(n=>n.id!==id).map(n=>`<option value="${n.id}" ${n.id===exceptOtherId?'selected':''}>${n.name}</option>`).join('');
+  const typeOptions = (sel)=> Object.entries(appData.relations).map(([k,r])=>`<option value="${k}" ${k===sel?'selected':''}>${r.label}</option>`).join('');
+
+  const panel = document.getElementById('panel');
+  panel.innerHTML = `
+    <div class="field"><label>中文名</label><input type="text" id="f-name" value="${escapeAttr(d.name)}"></div>
+    <div class="field"><label>英文名</label><input type="text" id="f-nameEn" value="${escapeAttr(d.nameEn||'')}"></div>
+    <div class="field"><label>阵营</label><select id="f-faction">${factionOptions}</select></div>
+    <div class="field"><label>节点大小 <span class="range-val" id="f-r-val">${d.r}</span></label><input type="range" id="f-r" min="12" max="40" value="${d.r}"></div>
+    <div class="field"><label>简介</label><textarea id="f-desc">${escapeHtml(d.desc||'')}</textarea></div>
+    <button class="btn danger small" id="btn-del-node">删除此人物</button>
+
+    <div class="rel-title" style="margin-top:20px;">关系</div>
+    <div id="rel-edit-list">
+      ${rels.map(l=>{
+        const sId = l.source.id||l.source, tId = l.target.id||l.target;
+        const thisIsSource = sId===id;
+        const otherId = thisIsSource ? tId : sId;
+        return `<div class="rel-edit-row" data-lid="${l._id}" data-anchor-is-source="${thisIsSource}">
+          <select class="rel-target">${otherNodeOptions(otherId)}</select>
+          <select class="rel-type">${typeOptions(l.type)}</select>
+          <input type="text" class="rel-label-input" placeholder="关系说明…" value="${escapeAttr(l.label||'')}">
+          <button class="del-btn" title="删除此关系">×</button>
+        </div>`;
+      }).join('')}
+    </div>
+    <button class="btn small" id="btn-add-rel" style="margin-top:8px;">+ 添加关系</button>
+  `;
+
+  document.getElementById('f-name').addEventListener('input', (e)=>{ d.name=e.target.value; refreshNodeVisual(id); scheduleSave(); });
+  document.getElementById('f-nameEn').addEventListener('input', (e)=>{ d.nameEn=e.target.value; refreshNodeVisual(id); scheduleSave(); });
+  document.getElementById('f-faction').addEventListener('change', (e)=>{
+    d.faction=e.target.value; refreshNodeVisual(id);
+    d.fx=null; d.fy=null;
+    simulation.alpha(0.5).restart();
+    buildLegend(); applyFilters();
+    scheduleSave();
+  });
+  document.getElementById('f-r').addEventListener('input', (e)=>{
+    d.r = +e.target.value; document.getElementById('f-r-val').textContent = d.r;
+    refreshNodeVisual(id); simulation.force('collide').radius(n=>n.r+22); simulation.alpha(0.3).restart();
+    scheduleSave();
+  });
+  document.getElementById('f-desc').addEventListener('input', (e)=>{ d.desc=e.target.value; scheduleSave(); });
+  document.getElementById('btn-del-node').addEventListener('click', ()=>{
+    if(!confirm(`确定删除「${d.name}」吗？与其相关的所有关系也会被删除。`)) return;
+    appData.nodes = appData.nodes.filter(n=>n.id!==id);
+    appData.links = appData.links.filter(l=> (l.source.id||l.source)!==id && (l.target.id||l.target)!==id);
+    rebuildGraph();
+    selectNode(appData.nodes[0] ? appData.nodes[0].id : null);
+    scheduleSave();
+  });
+
+  panel.querySelectorAll('.rel-edit-row').forEach(row=>{
+    const lid = row.dataset.lid;
+    const link = appData.links.find(l=>l._id===lid);
+    const thisIsSource = row.dataset.anchorIsSource === 'true';
+    row.querySelector('.rel-target').addEventListener('change', (e)=>{
+      if(thisIsSource) link.target = e.target.value; else link.source = e.target.value;
+      rebuildGraph(); selectNode(id); scheduleSave();
+    });
+    row.querySelector('.rel-type').addEventListener('change', (e)=>{
+      link.type = e.target.value; refreshEdgeVisual(link); scheduleSave();
+    });
+    row.querySelector('.rel-label-input').addEventListener('input', (e)=>{
+      link.label = e.target.value; scheduleSave();
+    });
+    row.querySelector('.del-btn').addEventListener('click', ()=>{
+      appData.links = appData.links.filter(l=>l._id!==lid);
+      rebuildGraph(); selectNode(id); scheduleSave();
+    });
+  });
+
+  document.getElementById('btn-add-rel').addEventListener('click', ()=>{
+    const other = appData.nodes.find(n=>n.id!==id);
+    if(!other){ alert('至少需要两个人物才能建立关系。'); return; }
+    appData.links.push({ source:id, target:other.id, type:'family', label:'', _id:'e'+(linkAutoId++) });
+    rebuildGraph(); selectNode(id); scheduleSave();
+  });
+}
+
+function escapeHtml(s){ return (s||'').replace(/[&<>]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+function escapeAttr(s){ return (s||'').replace(/"/g,'&quot;'); }
+
+/* ============ 编辑模式 & 新增人物 ============ */
+document.getElementById('btn-edit-toggle').addEventListener('click', ()=>{
+  editMode = !editMode;
+  document.getElementById('btn-edit-toggle').textContent = editMode ? '完成编辑' : '✎ 编辑';
+  document.getElementById('btn-edit-toggle').classList.toggle('primary', editMode);
+  document.getElementById('edit-toolbar').classList.toggle('show', editMode);
+  document.getElementById('hint').textContent = editMode
+    ? '点人物编辑资料与关系 · 拖拽可移动位置'
+    : '滚轮缩放 · 拖拽平移 · 点人物看简介';
+  nodeSel.classed('editable', editMode);
+  selectNode(selectedId);
+});
+
+document.getElementById('btn-add-node').addEventListener('click', ()=>{
+  const id = 'node_' + Date.now().toString(36) + Math.floor(Math.random()*100);
+  appData.nodes.push({ id, name:'新人物', nameEn:'', faction:'town', r:18, desc:'' });
+  rebuildGraph();
+  selectNode(id);
+  scheduleSave();
+});
+
+document.getElementById('btn-reset').addEventListener('click', ()=>{
+  if(!confirm('确定要放弃全部修改，恢复为默认的人物关系图吗？此操作不可撤销。')) return;
+  appData = cloneDefaults();
+  buildLegend();
+  rebuildGraph();
+  selectNode(appData.nodes[0].id);
+  scheduleSave();
+});
+
+/* ============ 样式设置弹窗 ============ */
+function renderStyleModal(){
+  const fWrap = document.getElementById('modal-factions');
+  fWrap.innerHTML = '';
+  Object.entries(appData.factions).forEach(([key,f])=>{
+    const row = document.createElement('div');
+    row.className = 'style-row';
+    row.innerHTML = `<input type="color" value="${f.color}"><input type="text" value="${escapeAttr(f.label)}">`;
+    const [colorInput, textInput] = row.querySelectorAll('input');
+    colorInput.addEventListener('input', ()=>{ f.color=colorInput.value; buildLegend(); refreshAllNodeVisuals(); scheduleSave(); });
+    textInput.addEventListener('input', ()=>{ f.label=textInput.value; buildLegend(); if(selectedId) selectNode(selectedId); scheduleSave(); });
+    fWrap.appendChild(row);
+  });
+  const rWrap = document.getElementById('modal-relations');
+  rWrap.innerHTML = '';
+  Object.entries(appData.relations).forEach(([key,r])=>{
+    const row = document.createElement('div');
+    row.className = 'style-row';
+    row.innerHTML = `<input type="color" value="${r.color}"><input type="text" value="${escapeAttr(r.label)}"><label class="dash-check"><input type="checkbox" ${r.dashed?'checked':''}> 虚线</label>`;
+    const colorInput = row.querySelector('input[type=color]');
+    const textInput = row.querySelector('input[type=text]');
+    const dashInput = row.querySelector('input[type=checkbox]');
+    colorInput.addEventListener('input', ()=>{ r.color=colorInput.value; buildLegend(); edgeSel.select('.edge').attr('stroke', d=>appData.relations[d.type].color); scheduleSave(); });
+    textInput.addEventListener('input', ()=>{ r.label=textInput.value; buildLegend(); scheduleSave(); });
+    dashInput.addEventListener('change', ()=>{ r.dashed=dashInput.checked; buildLegend(); edgeSel.select('.edge').attr('stroke-dasharray', d=>appData.relations[d.type].dashed?'5,4':null); scheduleSave(); });
+    rWrap.appendChild(row);
+  });
+}
+document.getElementById('btn-style').addEventListener('click', ()=>{
+  renderStyleModal();
+  document.getElementById('modal-overlay').classList.add('show');
+});
+document.getElementById('btn-modal-close').addEventListener('click', ()=>{
+  document.getElementById('modal-overlay').classList.remove('show');
+});
+document.getElementById('modal-overlay').addEventListener('click', (e)=>{
+  if(e.target.id==='modal-overlay') document.getElementById('modal-overlay').classList.remove('show');
+});
+
+/* ============ 初始化 ============ */
+async function init(){
+  await loadData();
+  document.getElementById('loading').style.display = 'none';
+  buildLegend();
+  rebuildGraph();
+  selectNode(appData.nodes[0] ? appData.nodes[0].id : null);
+}
+init();
+</script>
+</body>
+</html>
