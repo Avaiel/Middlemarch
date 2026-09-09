@@ -2,7 +2,6 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<!-- 确保移动端正确缩放，禁用双击放大以优化拖拽体验 -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>《米德尔马契》人物关系图谱</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -11,7 +10,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
 <style>
   :root {
-    /* 雀起乡与烛镇：田园、信笺、阳光、草甸 */
     --paper: #fcfaf5;
     --paper-deep: #f2eadc;
     --ink: #54483e;
@@ -19,16 +17,15 @@
     --hairline: #d4cbb8;
     --panel-bg: #ffffff;
     
-    /* 乡村自然与情感张力点缀色 */
-    --danger: #b56a5d; /* 野玫瑰/砖红 */
-    --ok: #738c62;     /* 草甸绿 */
-    --warn: #d4a755;   /* 阳光与麦穗黄 */
-    --post-blue: #5b7586; /* 邮局蓝 */
-    --mystic: #6c5b7b; /* 暮色紫 */
-    --stranger: #4a5d4e; /* 幽林绿 */
+    --danger: #b56a5d; 
+    --ok: #738c62;     
+    --warn: #d4a755;   
+    --post-blue: #5b7586; 
+    --mystic: #6c5b7b; 
+    --stranger: #4a5d4e; 
   }
   * { box-sizing: border-box; }
-  html, body { margin: 0; padding: 0; height: 100%; background: #e8e1d5; overflow: hidden; touch-action: none; /* 禁用系统级下拉刷新，保护画布拖拽 */ }
+  html, body { margin: 0; padding: 0; height: 100%; background: #e8e1d5; overflow: hidden; touch-action: none; }
   body { font-family: 'EB Garamond', Georgia, serif; color: var(--ink); }
   
   #app {
@@ -95,7 +92,7 @@
   #edit-toolbar.show { display: flex; }
   .sync-group { display: flex; gap: 6px; border-left: 1px dotted var(--hairline); padding-left: 12px; }
 
-  /* ---------- Main area (点阵信纸背景) ---------- */
+  /* ---------- Main area ---------- */
   main { flex: 1; display: flex; min-height: 0; border-radius: 0 0 12px 12px; overflow: hidden; position: relative; }
   #graph-wrap { 
     flex: 1; position: relative; min-width: 0; min-height: 0; overflow: hidden; 
@@ -171,55 +168,37 @@
   .style-row input[type=text] { flex: 1; font-family: 'EB Garamond', serif; font-size: 13.5px; padding: 6px 10px; border: 1px solid var(--hairline); border-radius: 6px; }
   .style-row label.dash-check { font-size: 12.5px; font-style: italic; display: flex; align-items: center; gap: 4px; white-space: nowrap; color: var(--ink-soft); cursor: pointer; }
 
-  /* ================= 移动端适配 (响应式布局) ================= */
+  /* ================= 移动端适配 ================= */
   @media (max-width: 768px) {
     #app { margin: 0; border-radius: 0; border: none; height: 100vh; }
     main { flex-direction: column; border-radius: 0; }
     
-    /* 工具栏紧凑化 */
     #toolbar { padding: 10px 12px; gap: 10px; flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 0; }
     .brand .cn { font-size: 16px; }
     .legend-group, .sync-group { border-left: none; padding-left: 0; }
     #toolbar-right { flex: 1 1 auto; justify-content: flex-end; }
     #search { width: 100px; font-size: 12.5px; padding: 4px 10px; }
-    #hint { display: none; /* 手机端隐藏提示以节省空间 */ }
+    #hint { display: none; }
     
-    /* 侧边栏转换为「底部抽屉」 */
     #panel { 
       width: 100%; 
-      height: 40vh; /* 占据底部40% */
+      height: 40vh;
       border-left: none; 
       border-top: 2px dashed var(--hairline); 
       border-radius: 16px 16px 0 0; 
       box-shadow: 0 -4px 16px rgba(0,0,0,0.06);
       padding: 20px 16px;
-      /* 默认隐藏抽屉，点击人物时滑出 */
       position: absolute;
-      bottom: 0;
-      left: 0;
+      bottom: 0; left: 0;
       transform: translateY(100%);
     }
     #panel.show-bottom-sheet { transform: translateY(0); }
-    
-    /* 调整图谱区域高度 */
     #graph-wrap { height: 100%; }
-    
-    .field input[type=text], .field select, .field textarea { font-size: 16px; /* 手机端防止输入框聚焦时自动放大 */ }
-    
-    /* 为抽屉添加一个手柄提示符 */
-    #panel::before {
-      content: ''; display: block; width: 40px; height: 4px; background: var(--hairline);
-      border-radius: 2px; margin: 0 auto 16px auto; opacity: 0.6;
-    }
-    
-    /* 关闭抽屉的悬浮按钮 */
-    #btn-close-sheet {
-      display: block !important; position: absolute; top: 12px; right: 16px;
-      background: none; border: none; font-size: 24px; color: var(--ink-soft); padding: 4px;
-    }
+    .field input[type=text], .field select, .field textarea { font-size: 16px; }
+    #panel::before { content: ''; display: block; width: 40px; height: 4px; background: var(--hairline); border-radius: 2px; margin: 0 auto 16px auto; opacity: 0.6; }
+    #btn-close-sheet { display: block !important; position: absolute; top: 12px; right: 16px; background: none; border: none; font-size: 24px; color: var(--ink-soft); padding: 4px; }
   }
-  
-  #btn-close-sheet { display: none; } /* 桌面端隐藏关闭按钮 */
+  #btn-close-sheet { display: none; }
 </style>
 </head>
 <body>
@@ -230,7 +209,6 @@
       <span class="en">Story Relationship Web</span>
     </div>
     
-    <!-- 移动端通过横向滚动查看工具 -->
     <div style="display:flex; align-items:center; gap:12px;">
       <div id="edit-toolbar">
         <button class="btn small" id="btn-add-node">+ 新增人物</button>
@@ -282,8 +260,7 @@
 </div>
 
 <script>
-/* ============ 默认数据（扩展题材库） ============ */
-// 新增了适用于民俗、宅斗、奇幻、网文剧情的默认阵营与关系
+/* ============ 默认数据（保留原版人物，扩充关系/阵营） ============ */
 const defaultFactions = {
   brooke:    { label:'布鲁克家族',        color:'#b56a5d' },
   casaubon:  { label:'卡苏朋阵营',        color:'#5b7586' },
@@ -291,37 +268,66 @@ const defaultFactions = {
   garth:     { label:'加尔斯家族',        color:'#738c62' },
   bulstrode: { label:'布尔斯特罗德',      color:'#8a7d71' },
   town:      { label:'其他镇民',         color:'#c4a88b' },
-  outsider:  { label:'外乡人/异客',       color:'#4a5d4e' }, // 新增
-  mystic:    { label:'神秘势力/幕后',      color:'#6c5b7b' }  // 新增
+  outsider:  { label:'外乡人/异客',       color:'#4a5d4e' },
+  mystic:    { label:'神秘势力/幕后',      color:'#6c5b7b' } 
 };
 const defaultRelations = {
   family:     { label:'血缘/亲属',      color:'#8c8076', dashed:false },
   marriage:   { label:'夫妻/伴侣',      color:'#d4a755', dashed:false },
-  friend:     { label:'挚友/知己',      color:'#738c62', dashed:false }, // 新增
-  servant:    { label:'主仆/雇佣',      color:'#c4a88b', dashed:true  }, // 新增
-  rivalry:    { label:'宿敌/对立',      color:'#b56a5d', dashed:false }, // 新增/修改
-  contract:   { label:'契约/利益',      color:'#5b7586', dashed:true  }, // 新增
+  friend:     { label:'挚友/知己',      color:'#738c62', dashed:false },
+  servant:    { label:'主仆/雇佣',      color:'#c4a88b', dashed:true  },
+  rivalry:    { label:'宿敌/对立',      color:'#b56a5d', dashed:false },
+  contract:   { label:'契约/利益',      color:'#5b7586', dashed:true  },
+  support:    { label:'庇护/支持',      color:'#738c62', dashed:false },
   temptation: { label:'阻挠/诱惑',      color:'#8a7d71', dashed:true  }
 };
-// 依然保留米德尔马契初始数据作为演示，用户可自由一键清空或修改
 const defaultNodes = [
-  { id:'dorothea',    name:'多萝西娅·布鲁克', nameEn:'Dorothea Brooke', faction:'brooke', r:32, desc:'渴望以己之力成就一番事业的乡绅之女。' },
-  { id:'casaubon',    name:'爱德华·卡苏朋', nameEn:'Edward Casaubon', faction:'casaubon', r:26, desc:'埋首于《万有神话索隐》的年迈学者，猜忌心重。' },
-  { id:'willladislaw',name:'威尔·拉迪斯拉夫', nameEn:'Will Ladislaw', faction:'casaubon', r:26, desc:'才情洋溢的表侄，身世带着阴影。' },
-  { id:'celia',       name:'西莉亚·布鲁克', nameEn:'Celia Brooke', faction:'brooke', r:19, desc:'务实开朗的妹妹，安稳嫁给詹姆斯爵士。' },
-  { id:'lydgate',     name:'特提乌斯·莱德盖特', nameEn:'Tertius Lydgate', faction:'vincy', r:32, desc:'胸怀医学改革抱负的年轻外乡医生。' },
-  { id:'rosamond',    name:'罗莎蒙德·文西', nameEn:'Rosamond Vincy', faction:'vincy', r:25, desc:'米德尔马契公认的美人，虚荣而精于算计。' },
-  { id:'farebrother', name:'法拉布拉泽', nameEn:'Camden Farebrother', faction:'town', r:19, desc:'清贫却豁达的牧师。' },
-  { id:'stranger1',   name:'无名旅人', nameEn:'The Wanderer', faction:'outsider', r:17, desc:'刚来到镇上的神秘外乡人，似乎在打听旧日往事。' } // 演示新阵营
+  { id:'dorothea',    name:'多萝西娅·布鲁克', nameEn:'Dorothea Brooke', faction:'brooke', r:32, desc:'渴望以己之力成就一番事业的乡绅之女。先嫁学究卡苏朋，婚姻枯槁；丧偶后不顾世俗眼光，与拉迪斯拉夫结合，最终在平凡生活里安放理想。' },
+  { id:'casaubon',    name:'爱德华·卡苏朋', nameEn:'Edward Casaubon', faction:'casaubon', r:26, desc:'埋首于《万有神话索隐》的年迈学者。以婚姻换来一位侍读兼继承人，却因猜忌拉迪斯拉夫，在遗嘱中留下羞辱性的条款。' },
+  { id:'willladislaw',name:'威尔·拉迪斯拉夫', nameEn:'Will Ladislaw', faction:'casaubon', r:26, desc:'卡苏朋家道中落的表侄，才情洋溢，身世却带着阴影。深爱多萝西娅，宁可放弃财产也不愿被误会为图谋婚产。' },
+  { id:'celia',       name:'西莉亚·布鲁克', nameEn:'Celia Brooke', faction:'brooke', r:19, desc:'多萝西娅务实开朗的妹妹，不理解姐姐的理想主义，安稳嫁给詹姆斯爵士，过着传统而满足的乡绅太太生活。' },
+  { id:'jameschettam',name:'詹姆斯·切特姆爵士', nameEn:'Sir James Chettam', faction:'brooke', r:19, desc:'忠厚的邻家绅士，本想迎娶多萝西娅，被拒后转娶西莉亚，此后始终以姐夫的身份守护、关切着多萝西娅。' },
+  { id:'mrbrooke',    name:'布鲁克先生', nameEn:'Mr. Brooke', faction:'brooke', r:19, desc:'多萝西娅姐妹的监护人叔叔，见识浅薄却爱附庸风雅，一度雇拉迪斯拉夫办报参选，闹出不少笑话。' },
+  { id:'lydgate',     name:'特提乌斯·莱德盖特', nameEn:'Tertius Lydgate', faction:'vincy', r:32, desc:'胸怀医学改革抱负的年轻医生。一时冲动娶了虚荣的罗莎蒙德，又因债务卷入布尔斯特罗德的丑闻，理想被一点点消磨殆尽。' },
+  { id:'rosamond',    name:'罗莎蒙德·文西', nameEn:'Rosamond Vincy', faction:'vincy', r:25, desc:'米德尔马契公认的美人，虚荣而精于算计。婚后不断透支丈夫的信任与财力，一步步将莱德盖特拖入困境。' },
+  { id:'fred',        name:'弗雷德·文西', nameEn:'Fred Vincy', faction:'vincy', r:23, desc:'文西家不务正业的独子，曾指望继承费瑟斯通的遗产度日。在玛丽的督促下痛改前非，跟随加尔斯学做正经营生。' },
+  { id:'mrvincy',     name:'文西先生', nameEn:'Mr. Vincy', faction:'vincy', r:17, desc:'米德尔马契现任市长，制造厂主，一心盼着儿女攀附上层，却对弗雷德的挥霍长期睁一只眼闭一只眼。' },
+  { id:'mary',        name:'玛丽·加尔斯', nameEn:'Mary Garth', faction:'garth', r:23, desc:'朴实聪慧的加尔斯家长女，拒绝在费瑟斯通临终前偷改遗嘱，坚守原则。她的爱情，以弗雷德脱胎换骨为条件。' },
+  { id:'calebgarth',  name:'凯莱布·加尔斯', nameEn:'Caleb Garth', faction:'garth', r:19, desc:'诚恳能干的土地代理人，是全书道德的定盘星。收留并教导弗雷德做事，也是女儿玛丽爱情的隐形考官。' },
+  { id:'bulstrode',   name:'尼古拉斯·布尔斯特罗德', nameEn:'Nicholas Bulstrode', faction:'bulstrode', r:26, desc:'表面虔诚的银行家，早年靠隐瞒身世与侵吞遗产起家。旧日同伙拉弗尔斯的出现，最终掀翻了他体面的伪装。' },
+  { id:'mrsbulstrode',name:'哈丽特·布尔斯特罗德', nameEn:'Mrs. Bulstrode', faction:'bulstrode', r:19, desc:'文西先生的姐姐，布尔斯特罗德忠贞的妻子。丈夫丑闻曝光后，她褪去珠宝素服相伴，是全书最动人的坚守。' },
+  { id:'raffles',     name:'约翰·拉弗尔斯', nameEn:'John Raffles', faction:'bulstrode', r:17, desc:'游荡潦倒的旧日投机者，握着布尔斯特罗德不堪的过去，靠此讹诈度日，最终的死亡也成了一桩悬案。' },
+  { id:'featherstone',name:'彼得·费瑟斯通', nameEn:'Peter Featherstone', faction:'town', r:19, desc:'坐拥田产的乖僻老人，临终前用一份藏起来的遗嘱，戏弄了所有等着分家产的亲戚，其中就包括弗雷德。' },
+  { id:'farebrother', name:'法拉布拉泽牧师', nameEn:'Rev. Camden Farebrother', faction:'town', r:17, desc:'清贫却豁达的牧师，暗恋玛丽，却主动为弗雷德说好话成全二人，也是莱德盖特危难时少有的挚友。' }
 ];
 const defaultLinks = [
-  { source:'dorothea', target:'casaubon',     type:'marriage',   label:'枯槁的婚姻' },
-  { source:'dorothea', target:'willladislaw', type:'marriage',   label:'迟来的真爱' },
+  { source:'dorothea', target:'casaubon',     type:'marriage',   label:'夫妻·痛苦的结合' },
+  { source:'dorothea', target:'willladislaw', type:'marriage',   label:'夫妻·迟来的真爱' },
   { source:'dorothea', target:'celia',        type:'family',     label:'姐妹' },
-  { source:'casaubon', target:'willladislaw', type:'rivalry',    label:'猜忌与防备' },
-  { source:'lydgate',  target:'rosamond',     type:'marriage',   label:'理想幻灭' },
-  { source:'farebrother', target:'lydgate',   type:'friend',     label:'罕见的挚友' }, // 演示新关系
-  { source:'stranger1', target:'casaubon',    type:'contract',   label:'隐秘交易' }    // 演示新关系
+  { source:'dorothea', target:'mrbrooke',     type:'family',     label:'叔侄·监护' },
+  { source:'dorothea', target:'jameschettam', type:'temptation', label:'曾属意迎娶，未成' },
+  { source:'dorothea', target:'lydgate',      type:'support',    label:'理解与声援' },
+  { source:'dorothea', target:'rosamond',     type:'support',    label:'劝和·化解误会' },
+  { source:'casaubon', target:'willladislaw', type:'rivalry',    label:'猜忌·遗嘱阻挠' },
+  { source:'celia',    target:'jameschettam', type:'marriage',   label:'夫妻' },
+  { source:'mrbrooke', target:'willladislaw', type:'support',    label:'雇佣办报' },
+  { source:'lydgate',  target:'rosamond',     type:'marriage',   label:'夫妻·理想幻灭' },
+  { source:'rosamond', target:'fred',         type:'family',     label:'兄妹' },
+  { source:'rosamond', target:'willladislaw', type:'temptation', label:'单方倾慕·引发误会' },
+  { source:'fred',     target:'mary',         type:'marriage',   label:'青梅竹马·终成眷属' },
+  { source:'fred',     target:'mrvincy',      type:'family',     label:'父子' },
+  { source:'fred',     target:'featherstone', type:'family',     label:'甥舅·遗产落空' },
+  { source:'fred',     target:'calebgarth',   type:'support',    label:'收留·教导做事' },
+  { source:'mary',     target:'calebgarth',   type:'family',     label:'父女' },
+  { source:'mary',     target:'featherstone', type:'temptation', label:'临终托付·拒绝销毁遗嘱' },
+  { source:'lydgate',  target:'bulstrode',    type:'rivalry',    label:'借贷资助·终被丑闻拖累' },
+  { source:'bulstrode',target:'mrsbulstrode', type:'marriage',   label:'夫妻·丑闻后仍相守' },
+  { source:'bulstrode',target:'raffles',      type:'rivalry',    label:'勒索·旧日秘密' },
+  { source:'bulstrode',target:'willladislaw', type:'temptation', label:'隐瞒身世秘密，愧疚偿还' },
+  { source:'mrvincy',  target:'mrsbulstrode', type:'family',     label:'兄妹' },
+  { source:'raffles',  target:'lydgate',      type:'rivalry',    label:'临终牵连，引发医德质疑' },
+  { source:'farebrother', target:'lydgate',   type:'friend',     label:'挚友' }, // 替换为新增的朋友关系
+  { source:'farebrother', target:'fred',      type:'support',    label:'成全弗雷德与玛丽' }
 ];
 
 function cloneDefaults(){
@@ -333,7 +339,7 @@ function cloneDefaults(){
   };
 }
 
-const STORAGE_KEY = 'middlemarch-graph-v2'; // 更新版本号以免与旧版冲突
+const STORAGE_KEY = 'middlemarch-graph-v3'; 
 let appData = null;
 let editMode = false;
 let selectedId = null;
@@ -350,7 +356,6 @@ const g = svg.append('g');
 const edgeLayer = g.append('g');
 const nodeLayer = g.append('g');
 
-// 缩放行为配置，针对移动端双指缩放优化
 const zoom = d3.zoom().scaleExtent([0.25, 4]).on('zoom', (e)=> g.attr('transform', e.transform));
 svg.call(zoom);
 svg.on('click', (e)=> {
@@ -376,7 +381,6 @@ async function loadData(){
   } else {
     appData = cloneDefaults();
   }
-  // 确保向下兼容补全新阵营
   if(!appData.factions) appData.factions = JSON.parse(JSON.stringify(defaultFactions));
   if(!appData.relations) appData.relations = JSON.parse(JSON.stringify(defaultRelations));
   calculateCenters();
@@ -409,7 +413,6 @@ function scheduleSave(){
   }, 500);
 }
 
-// 导出与导入（跨设备同步）
 document.getElementById('btn-export').addEventListener('click', ()=>{
   const dataString = JSON.stringify(serializeData());
   const encoded = btoa(encodeURIComponent(dataString));
@@ -488,7 +491,7 @@ function rebuildGraph(){
     .on('mouseenter', (event,d)=> showTooltip(event,d))
     .on('mousemove', (event)=> moveTooltip(event))
     .on('mouseleave', ()=> hideTooltip())
-    .on('touchstart', (event,d)=> { showTooltip(event,d); setTimeout(hideTooltip, 2000); }); // 适配移动端点按连线
+    .on('touchstart', (event,d)=> { showTooltip(event,d); setTimeout(hideTooltip, 2000); }); 
 
   edgeSel = edgeGroups;
 
@@ -595,15 +598,14 @@ function selectNode(id){
   if(nodeSel) nodeSel.select('.node-circle').classed('selected', d=>d.id===id);
   
   if(!id){ 
-    panelEl.classList.remove('show-bottom-sheet'); // 手机端缩回抽屉
+    panelEl.classList.remove('show-bottom-sheet'); 
     editMode ? renderEmptyEditPanel() : renderEmptyPanel(); 
     return; 
   }
   
-  panelEl.classList.add('show-bottom-sheet'); // 手机端弹出抽屉
+  panelEl.classList.add('show-bottom-sheet'); 
   editMode ? renderEditPanel(id) : renderReadPanel(id);
   
-  // 如果是移动端，自动将视角平移到选中节点，防止被抽屉挡住
   if(window.innerWidth <= 768 && nodeById[id]) {
     const d = nodeById[id];
     svg.transition().duration(500).call(zoom.translateTo, d.x, d.y + 150);
@@ -772,7 +774,6 @@ async function init(){
   document.getElementById('loading').style.display = 'none';
   buildLegend();
   rebuildGraph();
-  // 不再强制选中节点，保持清爽全局视图
 }
 init();
 </script>
