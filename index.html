@@ -2,7 +2,8 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- 确保移动端正确缩放，禁用双击放大以优化拖拽体验 -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>《米德尔马契》人物关系图谱</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -10,20 +11,25 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
 <style>
   :root {
+    /* 雀起乡与烛镇：田园、信笺、阳光、草甸 */
     --paper: #fcfaf5;
     --paper-deep: #f2eadc;
     --ink: #54483e;
     --ink-soft: #8c8076;
     --hairline: #d4cbb8;
     --panel-bg: #ffffff;
-    --danger: #b56a5d;
-    --ok: #738c62;
-    --warn: #d4a755;
-    --post-blue: #5b7586;
+    
+    /* 乡村自然与情感张力点缀色 */
+    --danger: #b56a5d; /* 野玫瑰/砖红 */
+    --ok: #738c62;     /* 草甸绿 */
+    --warn: #d4a755;   /* 阳光与麦穗黄 */
+    --post-blue: #5b7586; /* 邮局蓝 */
+    --mystic: #6c5b7b; /* 暮色紫 */
+    --stranger: #4a5d4e; /* 幽林绿 */
   }
   * { box-sizing: border-box; }
-  html, body { margin: 0; padding: 0; height: 100%; background: #e8e1d5; }
-  body { font-family: 'EB Garamond', Georgia, serif; color: var(--ink); overflow: hidden; }
+  html, body { margin: 0; padding: 0; height: 100%; background: #e8e1d5; overflow: hidden; touch-action: none; /* 禁用系统级下拉刷新，保护画布拖拽 */ }
+  body { font-family: 'EB Garamond', Georgia, serif; color: var(--ink); }
   
   #app {
     height: 100vh; display: flex; flex-direction: column;
@@ -38,36 +44,36 @@
 
   /* ---------- Toolbar ---------- */
   #toolbar {
-    display: flex; align-items: center; gap: 18px; padding: 14px 24px;
+    display: flex; align-items: center; gap: 16px; padding: 12px 20px;
     border-bottom: 2px dashed var(--hairline);
     background: linear-gradient(to right, var(--paper-deep), var(--paper));
-    border-radius: 12px 12px 0 0; flex-wrap: wrap; row-gap: 8px;
+    border-radius: 12px 12px 0 0; flex-wrap: wrap; row-gap: 8px; flex: none;
   }
-  .brand { display: flex; flex-direction: column; margin-right: 6px; white-space: nowrap; }
-  .brand .cn { font-family: 'Playfair Display', serif; font-weight: 600; font-size: 20px; color: var(--post-blue); letter-spacing: 0.5px; }
-  .brand .en { font-size: 13px; color: var(--ok); font-style: italic; margin-top: 2px; }
+  .brand { display: flex; flex-direction: column; margin-right: auto; white-space: nowrap; }
+  .brand .cn { font-family: 'Playfair Display', serif; font-weight: 600; font-size: 19px; color: var(--post-blue); letter-spacing: 0.5px; }
+  .brand .en { font-size: 12px; color: var(--ok); font-style: italic; margin-top: 1px; }
   
-  .legend-group { display: flex; align-items: center; gap: 9px; padding: 5px 14px; border-left: 1px dotted var(--hairline); flex-wrap: wrap; }
-  .legend-title { font-size: 13px; font-style: italic; color: var(--ink-soft); margin-right: 2px; white-space: nowrap; }
-  .chip { display: flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer; user-select: none; padding: 4px 10px; border-radius: 20px; white-space: nowrap; transition: background 0.2s;}
+  .legend-group { display: flex; align-items: center; gap: 8px; padding: 4px 12px; border-left: 1px dotted var(--hairline); flex-wrap: wrap; }
+  .legend-title { font-size: 12.5px; font-style: italic; color: var(--ink-soft); margin-right: 2px; white-space: nowrap; }
+  .chip { display: flex; align-items: center; gap: 5px; font-size: 12.5px; cursor: pointer; user-select: none; padding: 4px 8px; border-radius: 20px; white-space: nowrap; transition: background 0.2s;}
   .chip:hover { background: rgba(115,140,98,0.08); }
   .chip input { accent-color: var(--ok); margin: 0; cursor: pointer; }
-  .swatch { width: 12px; height: 12px; border-radius: 50%; flex: none; border: 1px solid rgba(0,0,0,0.1); box-shadow: inset 1px 1px 2px rgba(255,255,255,0.8); }
-  .line-sample { width: 18px; height: 0; border-top: 2px solid; flex: none; }
+  .swatch { width: 10px; height: 10px; border-radius: 50%; flex: none; border: 1px solid rgba(0,0,0,0.1); box-shadow: inset 1px 1px 2px rgba(255,255,255,0.8); }
+  .line-sample { width: 16px; height: 0; border-top: 2px solid; flex: none; }
   .line-sample.dashed { border-top-style: dashed; }
 
-  #toolbar-right { margin-left: auto; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
-  #hint { font-size: 12px; font-style: italic; color: var(--ink-soft); white-space: nowrap; }
+  #toolbar-right { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  #hint { font-size: 11.5px; font-style: italic; color: var(--ink-soft); white-space: nowrap; }
   
   #search { 
-    font-family: 'EB Garamond', serif; font-size: 14px; padding: 6px 14px; 
-    border: 1px solid var(--hairline); border-radius: 20px; background: #fff; color: var(--ink); width: 140px; outline: none;
+    font-family: 'EB Garamond', serif; font-size: 13.5px; padding: 6px 12px; 
+    border: 1px solid var(--hairline); border-radius: 20px; background: #fff; color: var(--ink); width: 130px; outline: none;
     box-shadow: inset 0 1px 3px rgba(0,0,0,0.02); transition: all 0.2s ease;
   }
   #search:focus { border-color: var(--post-blue); box-shadow: 0 0 0 3px rgba(91,117,134,0.1); }
 
   .btn {
-    font-family: 'EB Garamond', serif; font-size: 13.5px; padding: 6px 16px; border-radius: 20px;
+    font-family: 'EB Garamond', serif; font-size: 13px; padding: 6px 14px; border-radius: 20px;
     border: 1px solid var(--hairline); background: #fff; color: var(--ink);
     cursor: pointer; white-space: nowrap; font-weight: 500;
     box-shadow: 0 2px 4px rgba(84,72,62,0.04); transition: all 0.2s ease;
@@ -78,21 +84,21 @@
   .btn.primary:hover { background: #617852; }
   .btn.danger { border-color: var(--danger); color: var(--danger); background: transparent; }
   .btn.danger:hover { background: rgba(181,106,93,0.08); }
-  .btn.small { font-size: 12.5px; padding: 4px 12px; }
+  .btn.small { font-size: 12px; padding: 4px 10px; }
 
-  #save-status { font-size: 12px; font-style: italic; color: var(--ink-soft); display: flex; align-items: center; gap: 6px; white-space: nowrap; }
-  #save-status .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); }
+  #save-status { font-size: 11.5px; font-style: italic; color: var(--ink-soft); display: flex; align-items: center; gap: 5px; white-space: nowrap; }
+  #save-status .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); }
   #save-status.saving .dot { background: var(--warn); }
   #save-status.error .dot { background: var(--danger); }
 
-  #edit-toolbar { display: none; align-items: center; gap: 10px; padding: 0 14px; border-left: 1px dotted var(--hairline); }
+  #edit-toolbar { display: none; align-items: center; gap: 8px; padding: 0 12px; border-left: 1px dotted var(--hairline); }
   #edit-toolbar.show { display: flex; }
-  .sync-group { display: flex; gap: 6px; border-left: 1px dotted var(--hairline); padding-left: 14px; }
+  .sync-group { display: flex; gap: 6px; border-left: 1px dotted var(--hairline); padding-left: 12px; }
 
   /* ---------- Main area (点阵信纸背景) ---------- */
-  main { flex: 1; display: flex; min-height: 0; border-radius: 0 0 12px 12px; overflow: hidden; }
+  main { flex: 1; display: flex; min-height: 0; border-radius: 0 0 12px 12px; overflow: hidden; position: relative; }
   #graph-wrap { 
-    flex: 1; position: relative; min-width: 0; overflow: hidden; 
+    flex: 1; position: relative; min-width: 0; min-height: 0; overflow: hidden; 
     background-image: radial-gradient(rgba(84, 72, 62, 0.12) 1.2px, transparent 1.2px);
     background-size: 28px 28px; background-position: center center;
   }
@@ -101,7 +107,7 @@
     background: radial-gradient(ellipse at center, transparent 45%, rgba(84, 72, 62, 0.08) 120%);
     pointer-events: none; z-index: 0;
   }
-  svg#graph { width: 100%; height: 100%; display: block; cursor: grab; position: relative; z-index: 1; }
+  svg#graph { width: 100%; height: 100%; display: block; cursor: grab; position: relative; z-index: 1; touch-action: none; }
   svg#graph:active { cursor: grabbing; }
 
   .node-label { font-family: 'Playfair Display', serif; font-size: 13px; font-weight: 600; fill: var(--ink); pointer-events: none; paint-order: stroke; stroke: rgba(252,250,245,0.9); stroke-width: 4px; stroke-linejoin: round; }
@@ -121,77 +127,131 @@
   #loading { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(252,250,245,0.8); font-style: italic; color: var(--ink-soft); font-size: 16px; z-index: 20; letter-spacing: 1px; backdrop-filter: blur(2px); }
 
   /* ---------- Side panel ---------- */
-  #panel { width: 340px; flex: none; border-left: 1px solid var(--hairline); background: var(--panel-bg); padding: 30px 26px; overflow-y: auto; box-shadow: -2px 0 12px rgba(0,0,0,0.02); }
-  #panel .faction-tag { display: inline-block; font-size: 11.5px; font-family: 'EB Garamond', serif; padding: 4px 12px; border-radius: 12px; color: #fff; margin-bottom: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-  #panel h2 { font-family: 'Playfair Display', serif; font-size: 26px; margin: 0 0 6px 0; line-height: 1.2; color: var(--ink); }
-  #panel .name-en { font-style: italic; color: var(--post-blue); font-size: 14.5px; margin-bottom: 20px; }
-  #panel .desc { font-size: 15px; line-height: 1.8; color: var(--ink); margin-bottom: 26px; padding-bottom: 24px; border-bottom: 1px solid #f0ebe1; text-align: justify; }
-  #panel .rel-title { font-family: 'Playfair Display', serif; font-size: 16px; font-weight: 600; font-style: italic; margin-bottom: 14px; color: var(--ok); }
+  #panel { width: 340px; flex: none; border-left: 1px solid var(--hairline); background: var(--panel-bg); padding: 26px 24px; overflow-y: auto; box-shadow: -2px 0 12px rgba(0,0,0,0.02); z-index: 5; transition: transform 0.3s ease; }
+  #panel .faction-tag { display: inline-block; font-size: 11px; font-family: 'EB Garamond', serif; padding: 4px 10px; border-radius: 12px; color: #fff; margin-bottom: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+  #panel h2 { font-family: 'Playfair Display', serif; font-size: 24px; margin: 0 0 6px 0; line-height: 1.2; color: var(--ink); }
+  #panel .name-en { font-style: italic; color: var(--post-blue); font-size: 14px; margin-bottom: 16px; }
+  #panel .desc { font-size: 14.5px; line-height: 1.7; color: var(--ink); margin-bottom: 22px; padding-bottom: 20px; border-bottom: 1px solid #f0ebe1; text-align: justify; }
+  #panel .rel-title { font-family: 'Playfair Display', serif; font-size: 15.5px; font-weight: 600; font-style: italic; margin-bottom: 12px; color: var(--ok); }
   #panel .rel-list { list-style: none; padding: 0; margin: 0 0 8px 0; }
-  #panel .rel-list li { font-size: 14px; line-height: 1.6; padding: 8px 0; border-bottom: 1px dashed #f0ebe1; display: flex; align-items: baseline; }
+  #panel .rel-list li { font-size: 13.5px; line-height: 1.6; padding: 8px 0; border-bottom: 1px dashed #f0ebe1; display: flex; align-items: baseline; }
   #panel .rel-name { cursor: pointer; font-weight: 600; color: var(--ink); margin: 0 4px; transition: color 0.2s; }
   #panel .rel-name:hover { color: var(--post-blue); text-decoration: underline; text-underline-offset: 3px; }
-  #panel .rel-label { color: var(--ink-soft); font-size: 13px; font-style: italic; }
-  #panel-empty { color: var(--ink-soft); font-style: italic; font-size: 15px; line-height: 1.8; margin-top: 50px; text-align: center; }
+  #panel .rel-label { color: var(--ink-soft); font-size: 12.5px; font-style: italic; }
+  #panel-empty { color: var(--ink-soft); font-style: italic; font-size: 14px; line-height: 1.8; margin-top: 40px; text-align: center; }
 
   /* ---------- Edit form ---------- */
-  .field { margin-bottom: 18px; }
-  .field label { display: block; font-size: 13.5px; font-style: italic; color: var(--post-blue); margin-bottom: 6px; }
+  .field { margin-bottom: 16px; }
+  .field label { display: block; font-size: 13px; font-style: italic; color: var(--post-blue); margin-bottom: 4px; }
   .field input[type=text], .field select, .field textarea {
-    width: 100%; font-family: 'EB Garamond', serif; font-size: 14.5px; padding: 10px 12px;
-    border: 1px solid var(--hairline); border-radius: 8px; background: #fff; color: var(--ink); transition: all 0.2s;
+    width: 100%; font-family: 'EB Garamond', serif; font-size: 14px; padding: 8px 10px;
+    border: 1px solid var(--hairline); border-radius: 6px; background: #fff; color: var(--ink); transition: all 0.2s;
   }
   .field input[type=text]:focus, .field select:focus, .field textarea:focus { outline: none; border-color: var(--ok); box-shadow: 0 0 0 3px rgba(115,140,98,0.1); }
-  .field textarea { resize: vertical; min-height: 80px; line-height: 1.6; }
+  .field textarea { resize: vertical; min-height: 70px; line-height: 1.5; }
   .field input[type=range] { width: 100%; accent-color: var(--ok); }
-  .field .range-val { font-size: 13px; color: var(--ink-soft); font-family: monospace; }
-  .form-actions { display: flex; gap: 10px; margin: 20px 0 24px 0; }
-  .rel-edit-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 12px 0; border-bottom: 1px dashed var(--hairline); }
-  .rel-edit-row select, .rel-edit-row input[type=text] { font-family: 'EB Garamond', serif; font-size: 13.5px; padding: 6px 10px; border: 1px solid var(--hairline); border-radius: 6px; background: #fff; }
-  .rel-edit-row .rel-target { flex: 1 1 110px; min-width: 90px; }
-  .rel-edit-row .rel-type { flex: 1 1 90px; min-width: 80px; }
+  .field .range-val { font-size: 12.5px; color: var(--ink-soft); font-family: monospace; }
+  .form-actions { display: flex; gap: 8px; margin: 18px 0 20px 0; }
+  .rel-edit-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 10px 0; border-bottom: 1px dashed var(--hairline); }
+  .rel-edit-row select, .rel-edit-row input[type=text] { font-family: 'EB Garamond', serif; font-size: 13px; padding: 4px 8px; border: 1px solid var(--hairline); border-radius: 4px; background: #fff; }
+  .rel-edit-row .rel-target { flex: 1 1 100px; min-width: 90px; }
+  .rel-edit-row .rel-type { flex: 1 1 80px; min-width: 80px; }
   .rel-edit-row .rel-label-input { flex: 1 1 100%; min-width: 120px; font-style: italic; }
-  .rel-edit-row .del-btn { background: none; border: none; color: var(--danger); cursor: pointer; font-size: 18px; line-height: 1; padding: 4px; opacity: 0.6; transition: opacity 0.2s; }
+  .rel-edit-row .del-btn { background: none; border: none; color: var(--danger); cursor: pointer; font-size: 16px; line-height: 1; padding: 4px; opacity: 0.6; transition: opacity 0.2s; }
   .rel-edit-row .del-btn:hover { opacity: 1; }
 
   /* ---------- Style settings modal ---------- */
   #modal-overlay { position: fixed; inset: 0; background: rgba(84,72,62,0.4); display: none; align-items: center; justify-content: center; z-index: 50; backdrop-filter: blur(3px); }
   #modal-overlay.show { display: flex; }
-  #modal-box { background: var(--panel-bg); border: 1px solid var(--hairline); border-radius: 12px; width: 500px; max-width: 92vw; max-height: 82vh; overflow-y: auto; padding: 32px; box-shadow: 0 12px 40px rgba(0,0,0,0.15); }
-  #modal-box h3 { font-family: 'Playfair Display', serif; margin: 0 0 16px 0; font-size: 22px; color: var(--post-blue); border-bottom: 1px dashed var(--hairline); padding-bottom: 12px; }
-  #modal-box h4 { font-size: 14.5px; font-style: italic; color: var(--ok); margin: 24px 0 12px 0; }
-  .style-row { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
-  .style-row input[type=color] { width: 36px; height: 36px; padding: 0; border: 2px solid #fff; border-radius: 50%; background: none; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-  .style-row input[type=text] { flex: 1; font-family: 'EB Garamond', serif; font-size: 14.5px; padding: 8px 12px; border: 1px solid var(--hairline); border-radius: 6px; }
-  .style-row label.dash-check { font-size: 13.5px; font-style: italic; display: flex; align-items: center; gap: 6px; white-space: nowrap; color: var(--ink-soft); cursor: pointer; }
+  #modal-box { background: var(--panel-bg); border: 1px solid var(--hairline); border-radius: 12px; width: 460px; max-width: 92vw; max-height: 82vh; overflow-y: auto; padding: 24px; box-shadow: 0 12px 40px rgba(0,0,0,0.15); }
+  #modal-box h3 { font-family: 'Playfair Display', serif; margin: 0 0 14px 0; font-size: 20px; color: var(--post-blue); border-bottom: 1px dashed var(--hairline); padding-bottom: 10px; }
+  #modal-box h4 { font-size: 13.5px; font-style: italic; color: var(--ok); margin: 20px 0 10px 0; }
+  .style-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .style-row input[type=color] { width: 32px; height: 32px; padding: 0; border: 2px solid #fff; border-radius: 50%; background: none; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+  .style-row input[type=text] { flex: 1; font-family: 'EB Garamond', serif; font-size: 13.5px; padding: 6px 10px; border: 1px solid var(--hairline); border-radius: 6px; }
+  .style-row label.dash-check { font-size: 12.5px; font-style: italic; display: flex; align-items: center; gap: 4px; white-space: nowrap; color: var(--ink-soft); cursor: pointer; }
+
+  /* ================= 移动端适配 (响应式布局) ================= */
+  @media (max-width: 768px) {
+    #app { margin: 0; border-radius: 0; border: none; height: 100vh; }
+    main { flex-direction: column; border-radius: 0; }
+    
+    /* 工具栏紧凑化 */
+    #toolbar { padding: 10px 12px; gap: 10px; flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 0; }
+    .brand .cn { font-size: 16px; }
+    .legend-group, .sync-group { border-left: none; padding-left: 0; }
+    #toolbar-right { flex: 1 1 auto; justify-content: flex-end; }
+    #search { width: 100px; font-size: 12.5px; padding: 4px 10px; }
+    #hint { display: none; /* 手机端隐藏提示以节省空间 */ }
+    
+    /* 侧边栏转换为「底部抽屉」 */
+    #panel { 
+      width: 100%; 
+      height: 40vh; /* 占据底部40% */
+      border-left: none; 
+      border-top: 2px dashed var(--hairline); 
+      border-radius: 16px 16px 0 0; 
+      box-shadow: 0 -4px 16px rgba(0,0,0,0.06);
+      padding: 20px 16px;
+      /* 默认隐藏抽屉，点击人物时滑出 */
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      transform: translateY(100%);
+    }
+    #panel.show-bottom-sheet { transform: translateY(0); }
+    
+    /* 调整图谱区域高度 */
+    #graph-wrap { height: 100%; }
+    
+    .field input[type=text], .field select, .field textarea { font-size: 16px; /* 手机端防止输入框聚焦时自动放大 */ }
+    
+    /* 为抽屉添加一个手柄提示符 */
+    #panel::before {
+      content: ''; display: block; width: 40px; height: 4px; background: var(--hairline);
+      border-radius: 2px; margin: 0 auto 16px auto; opacity: 0.6;
+    }
+    
+    /* 关闭抽屉的悬浮按钮 */
+    #btn-close-sheet {
+      display: block !important; position: absolute; top: 12px; right: 16px;
+      background: none; border: none; font-size: 24px; color: var(--ink-soft); padding: 4px;
+    }
+  }
+  
+  #btn-close-sheet { display: none; } /* 桌面端隐藏关闭按钮 */
 </style>
 </head>
 <body>
 <div id="app">
   <div id="toolbar">
     <div class="brand">
-      <span class="cn">《米德尔马契》人物关系图谱</span>
-      <span class="en">Middlemarch &mdash; George Eliot</span>
+      <span class="cn">关系图谱构建器</span>
+      <span class="en">Story Relationship Web</span>
     </div>
-    <div class="legend-group" id="faction-legend"><span class="legend-title">阵营：</span></div>
-    <div class="legend-group" id="relation-legend"><span class="legend-title">关系：</span></div>
-    <div id="edit-toolbar">
-      <button class="btn small" id="btn-add-node">+ 新增人物</button>
-      <button class="btn small" id="btn-style">🎨 样式</button>
-      <button class="btn small danger" id="btn-reset">↺ 重置数据</button>
-    </div>
-    <div id="toolbar-right">
-      <span id="hint">点人物看简介 · 滚轮缩放平移</span>
-      <input id="search" type="text" placeholder="搜索人物…">
+    
+    <!-- 移动端通过横向滚动查看工具 -->
+    <div style="display:flex; align-items:center; gap:12px;">
+      <div id="edit-toolbar">
+        <button class="btn small" id="btn-add-node">+ 新增人物</button>
+        <button class="btn small" id="btn-style">🎨 样式配置</button>
+        <button class="btn small danger" id="btn-reset">↺ 重置</button>
+      </div>
       
-      <!-- 数据同步功能区 -->
       <div class="sync-group">
-        <button class="btn small" id="btn-export" title="导出数据用于跨设备同步">📤 导出</button>
-        <button class="btn small" id="btn-import" title="导入其他设备的数据">📥 导入</button>
+        <button class="btn small" id="btn-export">📤 导出</button>
+        <button class="btn small" id="btn-import">📥 导入</button>
       </div>
 
+      <div class="legend-group" id="faction-legend"><span class="legend-title">阵营：</span></div>
+      <div class="legend-group" id="relation-legend"><span class="legend-title">关系：</span></div>
+    </div>
+
+    <div id="toolbar-right">
+      <span id="hint">点人物看简介 · 滚轮/双指缩放</span>
+      <input id="search" type="text" placeholder="搜索人物…">
       <span id="save-status"><span class="dot"></span><span id="save-status-text">已保存</span></span>
-      <button class="btn" id="btn-edit-toggle">✎ 编辑</button>
+      <button class="btn" id="btn-edit-toggle">✎ 编辑模式</button>
     </div>
   </div>
 
@@ -201,87 +261,67 @@
       <svg id="graph"></svg>
       <div id="edge-tooltip"></div>
     </div>
-    <aside id="panel"></aside>
+    <aside id="panel">
+      <button id="btn-close-sheet">×</button>
+      <div id="panel-content"></div>
+    </aside>
   </main>
 </div>
 
 <div id="modal-overlay">
   <div id="modal-box">
-    <h3>样式设置</h3>
-    <h4>阵营颜色与名称</h4>
+    <h3>样式设置 (完全自定义)</h3>
+    <h4>阵营与势力分布</h4>
     <div id="modal-factions"></div>
-    <h4>关系颜色与名称</h4>
+    <h4>关系网络与羁绊</h4>
     <div id="modal-relations"></div>
     <div class="form-actions">
-      <button class="btn primary" id="btn-modal-close">完成</button>
+      <button class="btn primary" id="btn-modal-close">保存并完成</button>
     </div>
   </div>
 </div>
 
 <script>
-/* ============ 默认数据 ============ */
+/* ============ 默认数据（扩展题材库） ============ */
+// 新增了适用于民俗、宅斗、奇幻、网文剧情的默认阵营与关系
 const defaultFactions = {
   brooke:    { label:'布鲁克家族',        color:'#b56a5d' },
-  casaubon:  { label:'卡苏朋与拉迪斯拉夫', color:'#5b7586' },
+  casaubon:  { label:'卡苏朋阵营',        color:'#5b7586' },
   vincy:     { label:'文西—莱德盖特',      color:'#d4a755' },
   garth:     { label:'加尔斯家族',        color:'#738c62' },
-  bulstrode: { label:'布尔斯特罗德阵营',   color:'#8a7d71' },
-  town:      { label:'其他镇民',         color:'#c4a88b' }
+  bulstrode: { label:'布尔斯特罗德',      color:'#8a7d71' },
+  town:      { label:'其他镇民',         color:'#c4a88b' },
+  outsider:  { label:'外乡人/异客',       color:'#4a5d4e' }, // 新增
+  mystic:    { label:'神秘势力/幕后',      color:'#6c5b7b' }  // 新增
 };
 const defaultRelations = {
-  family:     { label:'血缘',      color:'#8c8076', dashed:false },
-  marriage:   { label:'夫妻/情感', color:'#d4a755', dashed:false },
-  rivalry:    { label:'敌对',      color:'#b56a5d', dashed:false },
-  support:    { label:'庇护/支持', color:'#738c62', dashed:false },
-  temptation: { label:'阻挠/诱惑', color:'#5b7586', dashed:true  }
+  family:     { label:'血缘/亲属',      color:'#8c8076', dashed:false },
+  marriage:   { label:'夫妻/伴侣',      color:'#d4a755', dashed:false },
+  friend:     { label:'挚友/知己',      color:'#738c62', dashed:false }, // 新增
+  servant:    { label:'主仆/雇佣',      color:'#c4a88b', dashed:true  }, // 新增
+  rivalry:    { label:'宿敌/对立',      color:'#b56a5d', dashed:false }, // 新增/修改
+  contract:   { label:'契约/利益',      color:'#5b7586', dashed:true  }, // 新增
+  temptation: { label:'阻挠/诱惑',      color:'#8a7d71', dashed:true  }
 };
+// 依然保留米德尔马契初始数据作为演示，用户可自由一键清空或修改
 const defaultNodes = [
-  { id:'dorothea',    name:'多萝西娅·布鲁克', nameEn:'Dorothea Brooke', faction:'brooke', r:32, desc:'渴望以己之力成就一番事业的乡绅之女。先嫁学究卡苏朋，婚姻枯槁；丧偶后不顾世俗眼光，与拉迪斯拉夫结合，最终在平凡生活里安放理想。' },
-  { id:'casaubon',    name:'爱德华·卡苏朋', nameEn:'Edward Casaubon', faction:'casaubon', r:26, desc:'埋首于《万有神话索隐》的年迈学者。以婚姻换来一位侍读兼继承人，却因猜忌拉迪斯拉夫，在遗嘱中留下羞辱性的条款。' },
-  { id:'willladislaw',name:'威尔·拉迪斯拉夫', nameEn:'Will Ladislaw', faction:'casaubon', r:26, desc:'卡苏朋家道中落的表侄，才情洋溢，身世却带着阴影。深爱多萝西娅，宁可放弃财产也不愿被误会为图谋婚产。' },
-  { id:'celia',       name:'西莉亚·布鲁克', nameEn:'Celia Brooke', faction:'brooke', r:19, desc:'多萝西娅务实开朗的妹妹，不理解姐姐的理想主义，安稳嫁给詹姆斯爵士，过着传统而满足的乡绅太太生活。' },
-  { id:'jameschettam',name:'詹姆斯·切特姆爵士', nameEn:'Sir James Chettam', faction:'brooke', r:19, desc:'忠厚的邻家绅士，本想迎娶多萝西娅，被拒后转娶西莉亚，此后始终以姐夫的身份守护、关切着多萝西娅。' },
-  { id:'mrbrooke',    name:'布鲁克先生', nameEn:'Mr. Brooke', faction:'brooke', r:19, desc:'多萝西娅姐妹的监护人叔叔，见识浅薄却爱附庸风雅，一度雇拉迪斯拉夫办报参选，闹出不少笑话。' },
-  { id:'lydgate',     name:'特提乌斯·莱德盖特', nameEn:'Tertius Lydgate', faction:'vincy', r:32, desc:'胸怀医学改革抱负的年轻医生。一时冲动娶了虚荣的罗莎蒙德，又因债务卷入布尔斯特罗德的丑闻，理想被一点点消磨殆尽。' },
-  { id:'rosamond',    name:'罗莎蒙德·文西', nameEn:'Rosamond Vincy', faction:'vincy', r:25, desc:'米德尔马契公认的美人，虚荣而精于算计。婚后不断透支丈夫的信任与财力，一步步将莱德盖特拖入困境。' },
-  { id:'fred',        name:'弗雷德·文西', nameEn:'Fred Vincy', faction:'vincy', r:23, desc:'文西家不务正业的独子，曾指望继承费瑟斯通的遗产度日。在玛丽的督促下痛改前非，跟随加尔斯学做正经营生。' },
-  { id:'mrvincy',     name:'文西先生', nameEn:'Mr. Vincy', faction:'vincy', r:17, desc:'米德尔马契现任市长，制造厂主，一心盼着儿女攀附上层，却对弗雷德的挥霍长期睁一只眼闭一只眼。' },
-  { id:'mary',        name:'玛丽·加尔斯', nameEn:'Mary Garth', faction:'garth', r:23, desc:'朴实聪慧的加尔斯家长女，拒绝在费瑟斯通临终前偷改遗嘱，坚守原则。她的爱情，以弗雷德脱胎换骨为条件。' },
-  { id:'calebgarth',  name:'凯莱布·加尔斯', nameEn:'Caleb Garth', faction:'garth', r:19, desc:'诚恳能干的土地代理人，是全书道德的定盘星。收留并教导弗雷德做事，也是女儿玛丽爱情的隐形考官。' },
-  { id:'bulstrode',   name:'尼古拉斯·布尔斯特罗德', nameEn:'Nicholas Bulstrode', faction:'bulstrode', r:26, desc:'表面虔诚的银行家，早年靠隐瞒身世与侵吞遗产起家。旧日同伙拉弗尔斯的出现，最终掀翻了他体面的伪装。' },
-  { id:'mrsbulstrode',name:'哈丽特·布尔斯特罗德', nameEn:'Mrs. Bulstrode', faction:'bulstrode', r:19, desc:'文西先生的姐姐，布尔斯特罗德忠贞的妻子。丈夫丑闻曝光后，她褪去珠宝素服相伴，是全书最动人的坚守。' },
-  { id:'raffles',     name:'约翰·拉弗尔斯', nameEn:'John Raffles', faction:'bulstrode', r:17, desc:'游荡潦倒的旧日投机者，握着布尔斯特罗德不堪的过去，靠此讹诈度日，最终的死亡也成了一桩悬案。' },
-  { id:'featherstone',name:'彼得·费瑟斯通', nameEn:'Peter Featherstone', faction:'town', r:19, desc:'坐拥田产的乖僻老人，临终前用一份藏起来的遗嘱，戏弄了所有等着分家产的亲戚，其中就包括弗雷德。' },
-  { id:'farebrother', name:'法拉布拉泽牧师', nameEn:'Rev. Camden Farebrother', faction:'town', r:17, desc:'清贫却豁达的牧师，暗恋玛丽，却主动为弗雷德说好话成全二人，也是莱德盖特危难时少有的挚友。' }
+  { id:'dorothea',    name:'多萝西娅·布鲁克', nameEn:'Dorothea Brooke', faction:'brooke', r:32, desc:'渴望以己之力成就一番事业的乡绅之女。' },
+  { id:'casaubon',    name:'爱德华·卡苏朋', nameEn:'Edward Casaubon', faction:'casaubon', r:26, desc:'埋首于《万有神话索隐》的年迈学者，猜忌心重。' },
+  { id:'willladislaw',name:'威尔·拉迪斯拉夫', nameEn:'Will Ladislaw', faction:'casaubon', r:26, desc:'才情洋溢的表侄，身世带着阴影。' },
+  { id:'celia',       name:'西莉亚·布鲁克', nameEn:'Celia Brooke', faction:'brooke', r:19, desc:'务实开朗的妹妹，安稳嫁给詹姆斯爵士。' },
+  { id:'lydgate',     name:'特提乌斯·莱德盖特', nameEn:'Tertius Lydgate', faction:'vincy', r:32, desc:'胸怀医学改革抱负的年轻外乡医生。' },
+  { id:'rosamond',    name:'罗莎蒙德·文西', nameEn:'Rosamond Vincy', faction:'vincy', r:25, desc:'米德尔马契公认的美人，虚荣而精于算计。' },
+  { id:'farebrother', name:'法拉布拉泽', nameEn:'Camden Farebrother', faction:'town', r:19, desc:'清贫却豁达的牧师。' },
+  { id:'stranger1',   name:'无名旅人', nameEn:'The Wanderer', faction:'outsider', r:17, desc:'刚来到镇上的神秘外乡人，似乎在打听旧日往事。' } // 演示新阵营
 ];
 const defaultLinks = [
-  { source:'dorothea', target:'casaubon',     type:'marriage',   label:'夫妻·痛苦的结合' },
-  { source:'dorothea', target:'willladislaw', type:'marriage',   label:'夫妻·迟来的真爱' },
+  { source:'dorothea', target:'casaubon',     type:'marriage',   label:'枯槁的婚姻' },
+  { source:'dorothea', target:'willladislaw', type:'marriage',   label:'迟来的真爱' },
   { source:'dorothea', target:'celia',        type:'family',     label:'姐妹' },
-  { source:'dorothea', target:'mrbrooke',     type:'family',     label:'叔侄·监护' },
-  { source:'dorothea', target:'jameschettam', type:'temptation', label:'曾属意迎娶，未成' },
-  { source:'dorothea', target:'lydgate',      type:'support',    label:'理解与声援' },
-  { source:'dorothea', target:'rosamond',     type:'support',    label:'劝和·化解误会' },
-  { source:'casaubon', target:'willladislaw', type:'rivalry',    label:'猜忌·遗嘱阻挠' },
-  { source:'celia',    target:'jameschettam', type:'marriage',   label:'夫妻' },
-  { source:'mrbrooke', target:'willladislaw', type:'support',    label:'雇佣办报' },
-  { source:'lydgate',  target:'rosamond',     type:'marriage',   label:'夫妻·理想幻灭' },
-  { source:'rosamond', target:'fred',         type:'family',     label:'兄妹' },
-  { source:'rosamond', target:'willladislaw', type:'temptation', label:'单方倾慕·引发误会' },
-  { source:'fred',     target:'mary',         type:'marriage',   label:'青梅竹马·终成眷属' },
-  { source:'fred',     target:'mrvincy',      type:'family',     label:'父子' },
-  { source:'fred',     target:'featherstone', type:'family',     label:'甥舅·遗产落空' },
-  { source:'fred',     target:'calebgarth',   type:'support',    label:'收留·教导做事' },
-  { source:'mary',     target:'calebgarth',   type:'family',     label:'父女' },
-  { source:'mary',     target:'featherstone', type:'temptation', label:'临终托付·拒绝销毁遗嘱' },
-  { source:'lydgate',  target:'bulstrode',    type:'rivalry',    label:'借贷资助·终被丑闻拖累' },
-  { source:'bulstrode',target:'mrsbulstrode', type:'marriage',   label:'夫妻·丑闻后仍相守' },
-  { source:'bulstrode',target:'raffles',      type:'rivalry',    label:'勒索·旧日秘密' },
-  { source:'bulstrode',target:'willladislaw', type:'temptation', label:'隐瞒身世秘密，愧疚偿还' },
-  { source:'mrvincy',  target:'mrsbulstrode', type:'family',     label:'兄妹' },
-  { source:'raffles',  target:'lydgate',      type:'rivalry',    label:'临终牵连，引发医德质疑' },
-  { source:'farebrother', target:'lydgate',   type:'support',    label:'挚友' },
-  { source:'farebrother', target:'fred',      type:'support',    label:'成全弗雷德与玛丽' }
+  { source:'casaubon', target:'willladislaw', type:'rivalry',    label:'猜忌与防备' },
+  { source:'lydgate',  target:'rosamond',     type:'marriage',   label:'理想幻灭' },
+  { source:'farebrother', target:'lydgate',   type:'friend',     label:'罕见的挚友' }, // 演示新关系
+  { source:'stranger1', target:'casaubon',    type:'contract',   label:'隐秘交易' }    // 演示新关系
 ];
 
 function cloneDefaults(){
@@ -293,7 +333,7 @@ function cloneDefaults(){
   };
 }
 
-const STORAGE_KEY = 'middlemarch-graph-v1';
+const STORAGE_KEY = 'middlemarch-graph-v2'; // 更新版本号以免与旧版冲突
 let appData = null;
 let editMode = false;
 let selectedId = null;
@@ -309,16 +349,24 @@ const svg = d3.select('#graph').attr('viewBox', [0,0,W,H]).attr('preserveAspectR
 const g = svg.append('g');
 const edgeLayer = g.append('g');
 const nodeLayer = g.append('g');
-svg.call(d3.zoom().scaleExtent([0.35,3]).on('zoom', (e)=> g.attr('transform', e.transform)));
-svg.on('click', ()=> selectNode(null));
 
-const factionKeys = Object.keys(defaultFactions);
-const centerX = W/2, centerY = H/2 - 6, ringR = 210;
-const factionCenter = {};
-factionKeys.forEach((k,i)=>{
-  const angle = (i / factionKeys.length) * 2*Math.PI - Math.PI/2;
-  factionCenter[k] = { x: centerX + ringR*Math.cos(angle), y: centerY + ringR*Math.sin(angle) };
+// 缩放行为配置，针对移动端双指缩放优化
+const zoom = d3.zoom().scaleExtent([0.25, 4]).on('zoom', (e)=> g.attr('transform', e.transform));
+svg.call(zoom);
+svg.on('click', (e)=> {
+  if(e.target.tagName === 'svg') selectNode(null); 
 });
+
+let factionCenter = {};
+function calculateCenters() {
+  const factionKeys = Object.keys(appData.factions);
+  const centerX = W/2, centerY = H/2 - 6, ringR = 210;
+  factionCenter = {};
+  factionKeys.forEach((k,i)=>{
+    const angle = (i / factionKeys.length) * 2*Math.PI - Math.PI/2;
+    factionCenter[k] = { x: centerX + ringR*Math.cos(angle), y: centerY + ringR*Math.sin(angle) };
+  });
+}
 
 /* ============ 存储与同步 ============ */
 async function loadData(){
@@ -328,8 +376,10 @@ async function loadData(){
   } else {
     appData = cloneDefaults();
   }
+  // 确保向下兼容补全新阵营
   if(!appData.factions) appData.factions = JSON.parse(JSON.stringify(defaultFactions));
   if(!appData.relations) appData.relations = JSON.parse(JSON.stringify(defaultRelations));
+  calculateCenters();
 }
 
 function serializeData(){
@@ -359,67 +409,52 @@ function scheduleSave(){
   }, 500);
 }
 
-// 导出与导入（手动同步）功能
+// 导出与导入（跨设备同步）
 document.getElementById('btn-export').addEventListener('click', ()=>{
   const dataString = JSON.stringify(serializeData());
-  // Base64 编码，防止复制时丢失格式
   const encoded = btoa(encodeURIComponent(dataString));
   navigator.clipboard.writeText(encoded).then(() => {
-    alert('✅ 数据已成功复制到剪贴板！\n\n请将这串代码粘贴并保存在你的 Notion 数据库、Google Keep 或备忘录中。\n换设备时点击「导入」按钮粘贴即可恢复配置。');
+    alert('✅ 数据已复制到剪贴板！\n可粘贴至备忘录/Notion保存，换设备时点击「导入」恢复。');
   }).catch(() => {
-    prompt('你的浏览器不支持自动复制，请手动复制以下代码，并存入 Notion 或备忘录中：', encoded);
+    prompt('请手动复制以下代码备份：', encoded);
   });
 });
 
 document.getElementById('btn-import').addEventListener('click', ()=>{
-  const input = prompt('📥 跨设备导入\n\n请在此处粘贴你之前备份在 Notion / 备忘录 中的配置代码：');
+  const input = prompt('📥 导入配置代码：');
   if(!input) return;
   try {
     const decoded = decodeURIComponent(atob(input));
     const parsedData = JSON.parse(decoded);
     if(parsedData && parsedData.nodes && parsedData.links) {
       localStorage.setItem(STORAGE_KEY, decoded);
-      alert('🎉 导入成功，正在刷新页面...');
       location.reload();
-    } else {
-      alert('⚠️ 导入失败：你粘贴的代码内容有误或已损坏。');
-    }
-  } catch(e) {
-    alert('⚠️ 导入失败：无法解析代码，请确保粘贴的代码完整无误。');
-  }
+    } else { alert('⚠️ 数据格式损坏。'); }
+  } catch(e) { alert('⚠️ 无法解析代码。'); }
 });
 
 /* ============ 图例 ============ */
 function buildLegend(){
-  const prevFactionState = {};
-  document.querySelectorAll('input[data-faction]').forEach(cb=> prevFactionState[cb.dataset.faction]=cb.checked);
-  const prevRelationState = {};
-  document.querySelectorAll('input[data-relation]').forEach(cb=> prevRelationState[cb.dataset.relation]=cb.checked);
-
   const fLegend = d3.select('#faction-legend');
-  fLegend.selectAll('label.chip').remove();
+  fLegend.selectAll('.chip').remove();
   Object.entries(appData.factions).forEach(([key,f])=>{
     const chip = fLegend.append('label').attr('class','chip');
-    chip.append('input').attr('type','checkbox')
-      .property('checked', prevFactionState[key] !== undefined ? prevFactionState[key] : true)
-      .attr('data-faction',key).on('change', applyFilters);
+    chip.append('input').attr('type','checkbox').property('checked', true).attr('data-faction',key).on('change', applyFilters);
     chip.append('span').attr('class','swatch').style('background', f.color);
     chip.append('span').text(f.label);
   });
 
   const rLegend = d3.select('#relation-legend');
-  rLegend.selectAll('label.chip').remove();
+  rLegend.selectAll('.chip').remove();
   Object.entries(appData.relations).forEach(([key,r])=>{
     const chip = rLegend.append('label').attr('class','chip');
-    chip.append('input').attr('type','checkbox')
-      .property('checked', prevRelationState[key] !== undefined ? prevRelationState[key] : true)
-      .attr('data-relation',key).on('change', applyFilters);
+    chip.append('input').attr('type','checkbox').property('checked', true).attr('data-relation',key).on('change', applyFilters);
     chip.append('span').attr('class','line-sample' + (r.dashed?' dashed':'')).style('border-color', r.color);
     chip.append('span').text(r.label);
   });
 }
 
-/* ============ 渲染（结构性重建，保留已有位置）============ */
+/* ============ 渲染图谱 ============ */
 const dragBehavior = d3.drag()
   .on('start', (event,d)=>{ if(!event.active) simulation.alphaTarget(0.25).restart(); d.fx=d.x; d.fy=d.y; })
   .on('drag', (event,d)=>{ d.fx=event.x; d.fy=event.y; })
@@ -427,7 +462,6 @@ const dragBehavior = d3.drag()
 
 function rebuildGraph(){
   if(simulation) simulation.stop();
-
   const prevPos = {};
   appData.nodes.forEach(n=>{ if(n.x!=null) prevPos[n.id] = {x:n.x, y:n.y}; });
 
@@ -447,26 +481,22 @@ function rebuildGraph(){
   nodeLayer.selectAll('*').remove();
 
   const edgeGroups = edgeLayer.selectAll('g.edge-g').data(appData.links, d=>d._id).join('g').attr('class','edge-g');
-  const edgePath = edgeGroups.append('path').attr('class', d=>'edge edge-'+d.type)
-    .attr('stroke', d=>appData.relations[d.type].color)
-    .attr('stroke-dasharray', d=>appData.relations[d.type].dashed ? '5,4' : null);
-  const edgeHit = edgeGroups.append('path').attr('class','edge-hit')
-    .on('mouseenter', (event,d)=>{
-      const s = nodeById[d.source.id||d.source], t = nodeById[d.target.id||d.target];
-      d3.select('#edge-tooltip').style('opacity',1)
-        .html(`<b>${s?s.name:'?'}</b> — <b>${t?t.name:'?'}</b><br><span style="color:${appData.relations[d.type].color}">●</span> ${appData.relations[d.type].label}：${d.label||''}`);
-    })
-    .on('mousemove', (event)=>{
-      const [x,y] = d3.pointer(event, document.getElementById('graph-wrap'));
-      d3.select('#edge-tooltip').style('left', (x+16)+'px').style('top', (y+10)+'px');
-    })
-    .on('mouseleave', ()=> d3.select('#edge-tooltip').style('opacity',0));
+  edgeGroups.append('path').attr('class', d=>'edge edge-'+d.type)
+    .attr('stroke', d=>appData.relations[d.type]?appData.relations[d.type].color:'#000')
+    .attr('stroke-dasharray', d=>(appData.relations[d.type]&&appData.relations[d.type].dashed) ? '5,4' : null);
+  edgeGroups.append('path').attr('class','edge-hit')
+    .on('mouseenter', (event,d)=> showTooltip(event,d))
+    .on('mousemove', (event)=> moveTooltip(event))
+    .on('mouseleave', ()=> hideTooltip())
+    .on('touchstart', (event,d)=> { showTooltip(event,d); setTimeout(hideTooltip, 2000); }); // 适配移动端点按连线
+
   edgeSel = edgeGroups;
 
   nodeSel = nodeLayer.selectAll('g.node').data(appData.nodes, d=>d.id).join('g')
     .attr('class','node')
     .call(dragBehavior)
     .on('click', (event,d)=>{ event.stopPropagation(); selectNode(d.id); });
+    
   nodeSel.append('circle').attr('class','node-circle');
   nodeSel.append('text').attr('class','node-label').attr('text-anchor','middle');
   nodeSel.append('text').attr('class','node-label-en').attr('text-anchor','middle');
@@ -491,7 +521,7 @@ function ticked(){
 }
 
 function refreshAllNodeVisuals(){
-  nodeSel.select('.node-circle').attr('r', d=>d.r).attr('fill', d=>appData.factions[d.faction].color)
+  nodeSel.select('.node-circle').attr('r', d=>d.r).attr('fill', d=>appData.factions[d.faction]?appData.factions[d.faction].color:'#ccc')
     .classed('selected', d=>d.id===selectedId);
   nodeSel.select('.node-label').attr('y', d=>d.r+15).text(d=>d.name);
   nodeSel.select('.node-label-en').attr('y', d=>d.r+27).text(d=>d.nameEn||'');
@@ -511,6 +541,17 @@ function refreshEdgeVisual(link){
     .attr('stroke', appData.relations[link.type].color)
     .attr('stroke-dasharray', appData.relations[link.type].dashed ? '5,4' : null);
 }
+
+function showTooltip(event,d){
+  const s = nodeById[d.source.id||d.source], t = nodeById[d.target.id||d.target];
+  d3.select('#edge-tooltip').style('opacity',1)
+    .html(`<b>${s?s.name:'?'}</b> — <b>${t?t.name:'?'}</b><br><span style="color:${appData.relations[d.type].color}">●</span> ${appData.relations[d.type].label}：${d.label||''}`);
+}
+function moveTooltip(event){
+  const [x,y] = d3.pointer(event, document.getElementById('graph-wrap'));
+  d3.select('#edge-tooltip').style('left', (x+16)+'px').style('top', (y+10)+'px');
+}
+function hideTooltip(){ d3.select('#edge-tooltip').style('opacity',0); }
 
 /* ============ 过滤 & 搜索 ============ */
 let activeSearch = '';
@@ -537,25 +578,42 @@ function applyFilters(){
     if(!q) return false;
     const s = nodeById[d.source.id||d.source], t = nodeById[d.target.id||d.target];
     if(!s||!t) return false;
-    const match = s.name.toLowerCase().includes(q) || (s.nameEn||'').toLowerCase().includes(q) ||
-                  t.name.toLowerCase().includes(q) || (t.nameEn||'').toLowerCase().includes(q);
-    return !match;
+    return !(s.name.toLowerCase().includes(q) || (s.nameEn||'').toLowerCase().includes(q) || t.name.toLowerCase().includes(q) || (t.nameEn||'').toLowerCase().includes(q));
   });
 }
 document.getElementById('search').addEventListener('input', (e)=>{ activeSearch = e.target.value; applyFilters(); });
+
+/* ============ 移动端抽屉控制 ============ */
+const panelEl = document.getElementById('panel');
+document.getElementById('btn-close-sheet').addEventListener('click', ()=>{
+  selectNode(null);
+});
 
 /* ============ 选中 / 面板 ============ */
 function selectNode(id){
   selectedId = id;
   if(nodeSel) nodeSel.select('.node-circle').classed('selected', d=>d.id===id);
-  if(!id){ editMode ? renderEmptyEditPanel() : renderEmptyPanel(); return; }
+  
+  if(!id){ 
+    panelEl.classList.remove('show-bottom-sheet'); // 手机端缩回抽屉
+    editMode ? renderEmptyEditPanel() : renderEmptyPanel(); 
+    return; 
+  }
+  
+  panelEl.classList.add('show-bottom-sheet'); // 手机端弹出抽屉
   editMode ? renderEditPanel(id) : renderReadPanel(id);
+  
+  // 如果是移动端，自动将视角平移到选中节点，防止被抽屉挡住
+  if(window.innerWidth <= 768 && nodeById[id]) {
+    const d = nodeById[id];
+    svg.transition().duration(500).call(zoom.translateTo, d.x, d.y + 150);
+  }
 }
 
 function renderReadPanel(id){
   const d = nodeById[id];
   const rels = appData.links.filter(l => (l.source.id||l.source)===id || (l.target.id||l.target)===id);
-  const panel = document.getElementById('panel');
+  const panel = document.getElementById('panel-content');
   panel.innerHTML = `
     <span class="faction-tag" style="background:${appData.factions[d.faction].color}">${appData.factions[d.faction].label}</span>
     <h2>${d.name}</h2>
@@ -568,17 +626,17 @@ function renderReadPanel(id){
         const otherId = sId===id ? tId : sId;
         const other = nodeById[otherId];
         if(!other) return '';
-        return `<li><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${appData.relations[l.type].color};margin-right:8px; flex:none;"></span>与 <b data-goto="${other.id}" class="rel-name">${other.name}</b>：<span class="rel-label">${appData.relations[l.type].label} · ${l.label||''}</span></li>`;
+        return `<li><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${appData.relations[l.type].color};margin-right:8px; flex:none;"></span>与 <b data-goto="${other.id}" class="rel-name">${other.name}</b>：<span class="rel-label">${appData.relations[l.type].label} ${l.label? '· '+l.label:''}</span></li>`;
       }).join('')}
     </ul>`;
   panel.querySelectorAll('[data-goto]').forEach(el=> el.addEventListener('click', ()=> selectNode(el.dataset.goto)));
 }
 
 function renderEmptyPanel(){
-  document.getElementById('panel').innerHTML = `<div id="panel-empty">点击左侧任意人物，查看其在《米德尔马契》中的身份与人物关系。</div>`;
+  document.getElementById('panel-content').innerHTML = `<div id="panel-empty">点击画布中的人物，查看详情与羁绊。</div>`;
 }
 function renderEmptyEditPanel(){
-  document.getElementById('panel').innerHTML = `<div id="panel-empty">点击左侧人物即可编辑，或点击工具栏的"+ 新增人物"添加新角色。</div>`;
+  document.getElementById('panel-content').innerHTML = `<div id="panel-empty">点击人物进行编辑，或点击"+ 新增人物"。</div>`;
 }
 
 function renderEditPanel(id){
@@ -588,16 +646,16 @@ function renderEditPanel(id){
   const otherNodeOptions = (exceptOtherId)=> appData.nodes.filter(n=>n.id!==id).map(n=>`<option value="${n.id}" ${n.id===exceptOtherId?'selected':''}>${n.name}</option>`).join('');
   const typeOptions = (sel)=> Object.entries(appData.relations).map(([k,r])=>`<option value="${k}" ${k===sel?'selected':''}>${r.label}</option>`).join('');
 
-  const panel = document.getElementById('panel');
+  const panel = document.getElementById('panel-content');
   panel.innerHTML = `
-    <div class="field"><label>中文名</label><input type="text" id="f-name" value="${escapeAttr(d.name)}"></div>
-    <div class="field"><label>英文名</label><input type="text" id="f-nameEn" value="${escapeAttr(d.nameEn||'')}"></div>
-    <div class="field"><label>阵营</label><select id="f-faction">${factionOptions}</select></div>
+    <div class="field"><label>名字</label><input type="text" id="f-name" value="${escapeAttr(d.name)}"></div>
+    <div class="field"><label>英文/代号</label><input type="text" id="f-nameEn" value="${escapeAttr(d.nameEn||'')}"></div>
+    <div class="field"><label>阵营/身份</label><select id="f-faction">${factionOptions}</select></div>
     <div class="field"><label>节点大小 <span class="range-val" id="f-r-val">${d.r}</span></label><input type="range" id="f-r" min="12" max="40" value="${d.r}"></div>
-    <div class="field"><label>简介</label><textarea id="f-desc">${escapeHtml(d.desc||'')}</textarea></div>
-    <button class="btn danger small" id="btn-del-node">删除此人物</button>
+    <div class="field"><label>人物小传</label><textarea id="f-desc">${escapeHtml(d.desc||'')}</textarea></div>
+    <button class="btn danger small" id="btn-del-node" style="margin-bottom:12px;">删除此人物</button>
 
-    <div class="rel-title" style="margin-top:20px;">关系</div>
+    <div class="rel-title">关系编辑</div>
     <div id="rel-edit-list">
       ${rels.map(l=>{
         const sId = l.source.id||l.source, tId = l.target.id||l.target;
@@ -606,36 +664,28 @@ function renderEditPanel(id){
         return `<div class="rel-edit-row" data-lid="${l._id}" data-anchor-is-source="${thisIsSource}">
           <select class="rel-target">${otherNodeOptions(otherId)}</select>
           <select class="rel-type">${typeOptions(l.type)}</select>
-          <input type="text" class="rel-label-input" placeholder="关系说明…" value="${escapeAttr(l.label||'')}">
+          <input type="text" class="rel-label-input" placeholder="补充说明…" value="${escapeAttr(l.label||'')}">
           <button class="del-btn" title="删除此关系">×</button>
         </div>`;
       }).join('')}
     </div>
-    <button class="btn small" id="btn-add-rel" style="margin-top:8px;">+ 添加关系</button>
+    <button class="btn small" id="btn-add-rel" style="margin-top:8px;">+ 新增关系连线</button>
   `;
 
   document.getElementById('f-name').addEventListener('input', (e)=>{ d.name=e.target.value; refreshNodeVisual(id); scheduleSave(); });
   document.getElementById('f-nameEn').addEventListener('input', (e)=>{ d.nameEn=e.target.value; refreshNodeVisual(id); scheduleSave(); });
   document.getElementById('f-faction').addEventListener('change', (e)=>{
-    d.faction=e.target.value; refreshNodeVisual(id);
-    d.fx=null; d.fy=null;
-    simulation.alpha(0.5).restart();
-    buildLegend(); applyFilters();
-    scheduleSave();
+    d.faction=e.target.value; refreshNodeVisual(id); d.fx=null; d.fy=null; simulation.alpha(0.5).restart(); buildLegend(); applyFilters(); scheduleSave();
   });
   document.getElementById('f-r').addEventListener('input', (e)=>{
-    d.r = +e.target.value; document.getElementById('f-r-val').textContent = d.r;
-    refreshNodeVisual(id); simulation.force('collide').radius(n=>n.r+22); simulation.alpha(0.3).restart();
-    scheduleSave();
+    d.r = +e.target.value; document.getElementById('f-r-val').textContent = d.r; refreshNodeVisual(id); simulation.force('collide').radius(n=>n.r+22); simulation.alpha(0.3).restart(); scheduleSave();
   });
   document.getElementById('f-desc').addEventListener('input', (e)=>{ d.desc=e.target.value; scheduleSave(); });
   document.getElementById('btn-del-node').addEventListener('click', ()=>{
-    if(!confirm(`确定删除「${d.name}」吗？与其相关的所有关系也会被删除。`)) return;
+    if(!confirm(`确定删除「${d.name}」吗？`)) return;
     appData.nodes = appData.nodes.filter(n=>n.id!==id);
     appData.links = appData.links.filter(l=> (l.source.id||l.source)!==id && (l.target.id||l.target)!==id);
-    rebuildGraph();
-    selectNode(appData.nodes[0] ? appData.nodes[0].id : null);
-    scheduleSave();
+    rebuildGraph(); selectNode(null); scheduleSave();
   });
 
   panel.querySelectorAll('.rel-edit-row').forEach(row=>{
@@ -646,12 +696,8 @@ function renderEditPanel(id){
       if(thisIsSource) link.target = e.target.value; else link.source = e.target.value;
       rebuildGraph(); selectNode(id); scheduleSave();
     });
-    row.querySelector('.rel-type').addEventListener('change', (e)=>{
-      link.type = e.target.value; refreshEdgeVisual(link); scheduleSave();
-    });
-    row.querySelector('.rel-label-input').addEventListener('input', (e)=>{
-      link.label = e.target.value; scheduleSave();
-    });
+    row.querySelector('.rel-type').addEventListener('change', (e)=>{ link.type = e.target.value; refreshEdgeVisual(link); scheduleSave(); });
+    row.querySelector('.rel-label-input').addEventListener('input', (e)=>{ link.label = e.target.value; scheduleSave(); });
     row.querySelector('.del-btn').addEventListener('click', ()=>{
       appData.links = appData.links.filter(l=>l._id!==lid);
       rebuildGraph(); selectNode(id); scheduleSave();
@@ -660,8 +706,8 @@ function renderEditPanel(id){
 
   document.getElementById('btn-add-rel').addEventListener('click', ()=>{
     const other = appData.nodes.find(n=>n.id!==id);
-    if(!other){ alert('至少需要两个人物才能建立关系。'); return; }
-    appData.links.push({ source:id, target:other.id, type:'family', label:'', _id:'e'+(linkAutoId++) });
+    if(!other){ alert('至少需要两个人物。'); return; }
+    appData.links.push({ source:id, target:other.id, type:'friend', label:'', _id:'e'+(linkAutoId++) });
     rebuildGraph(); selectNode(id); scheduleSave();
   });
 }
@@ -672,105 +718,61 @@ function escapeAttr(s){ return (s||'').replace(/"/g,'&quot;'); }
 /* ============ 编辑模式 & 新增人物 ============ */
 document.getElementById('btn-edit-toggle').addEventListener('click', ()=>{
   editMode = !editMode;
-  document.getElementById('btn-edit-toggle').textContent = editMode ? '完成编辑' : '✎ 编辑';
+  document.getElementById('btn-edit-toggle').textContent = editMode ? '完成编辑' : '✎ 编辑模式';
   document.getElementById('btn-edit-toggle').classList.toggle('primary', editMode);
   document.getElementById('edit-toolbar').classList.toggle('show', editMode);
-  document.getElementById('hint').textContent = editMode
-    ? '点人物编辑资料与关系 · 拖拽可移动位置'
-    : '滚轮缩放 · 拖拽平移 · 点人物看简介';
   nodeSel.classed('editable', editMode);
   selectNode(selectedId);
 });
 
 document.getElementById('btn-add-node').addEventListener('click', ()=>{
   const id = 'node_' + Date.now().toString(36) + Math.floor(Math.random()*100);
-  appData.nodes.push({ id, name:'新人物', nameEn:'', faction:'town', r:18, desc:'' });
-  rebuildGraph();
-  selectNode(id);
-  scheduleSave();
+  appData.nodes.push({ id, name:'新角色', nameEn:'', faction:'town', r:20, desc:'' });
+  rebuildGraph(); selectNode(id); scheduleSave();
 });
 
 document.getElementById('btn-reset').addEventListener('click', ()=>{
-  if(!confirm('确定要放弃全部修改，恢复为默认的人物关系图吗？此操作不可撤销。')) return;
+  if(!confirm('清空所有自定义数据，恢复初始模板？')) return;
   appData = cloneDefaults();
-  
-  const lrColors = {
-    brooke: '#b56a5d',    // 砖红/玫瑰
-    casaubon: '#5b7586',  // 邮局蓝
-    vincy: '#d4a755',     // 麦秆金
-    garth: '#738c62',     // 草甸绿
-    bulstrode: '#8a7d71', // 灰褐
-    town: '#c4a88b'       // 原木色
-  };
-  Object.keys(appData.factions).forEach(k => {
-    if(lrColors[k]) appData.factions[k].color = lrColors[k];
-  });
-  
-  buildLegend();
-  rebuildGraph();
-  selectNode(appData.nodes[0].id);
-  scheduleSave();
+  calculateCenters(); buildLegend(); rebuildGraph(); selectNode(null); scheduleSave();
 });
 
-/* ============ 样式设置弹窗 ============ */
+/* ============ 样式设置弹窗 (添加新阵营/关系) ============ */
 function renderStyleModal(){
   const fWrap = document.getElementById('modal-factions');
   fWrap.innerHTML = '';
   Object.entries(appData.factions).forEach(([key,f])=>{
-    const row = document.createElement('div');
-    row.className = 'style-row';
+    const row = document.createElement('div'); row.className = 'style-row';
     row.innerHTML = `<input type="color" value="${f.color}"><input type="text" value="${escapeAttr(f.label)}">`;
     const [colorInput, textInput] = row.querySelectorAll('input');
     colorInput.addEventListener('input', ()=>{ f.color=colorInput.value; buildLegend(); refreshAllNodeVisuals(); scheduleSave(); });
     textInput.addEventListener('input', ()=>{ f.label=textInput.value; buildLegend(); if(selectedId) selectNode(selectedId); scheduleSave(); });
     fWrap.appendChild(row);
   });
+  
   const rWrap = document.getElementById('modal-relations');
   rWrap.innerHTML = '';
   Object.entries(appData.relations).forEach(([key,r])=>{
-    const row = document.createElement('div');
-    row.className = 'style-row';
+    const row = document.createElement('div'); row.className = 'style-row';
     row.innerHTML = `<input type="color" value="${r.color}"><input type="text" value="${escapeAttr(r.label)}"><label class="dash-check"><input type="checkbox" ${r.dashed?'checked':''}> 虚线</label>`;
-    const colorInput = row.querySelector('input[type=color]');
-    const textInput = row.querySelector('input[type=text]');
-    const dashInput = row.querySelector('input[type=checkbox]');
+    const colorInput = row.querySelector('input[type=color]'), textInput = row.querySelector('input[type=text]'), dashInput = row.querySelector('input[type=checkbox]');
     colorInput.addEventListener('input', ()=>{ r.color=colorInput.value; buildLegend(); edgeSel.select('.edge').attr('stroke', d=>appData.relations[d.type].color); scheduleSave(); });
     textInput.addEventListener('input', ()=>{ r.label=textInput.value; buildLegend(); scheduleSave(); });
     dashInput.addEventListener('change', ()=>{ r.dashed=dashInput.checked; buildLegend(); edgeSel.select('.edge').attr('stroke-dasharray', d=>appData.relations[d.type].dashed?'5,4':null); scheduleSave(); });
     rWrap.appendChild(row);
   });
 }
-document.getElementById('btn-style').addEventListener('click', ()=>{
-  renderStyleModal();
-  document.getElementById('modal-overlay').classList.add('show');
-});
-document.getElementById('btn-modal-close').addEventListener('click', ()=>{
-  document.getElementById('modal-overlay').classList.remove('show');
-});
-document.getElementById('modal-overlay').addEventListener('click', (e)=>{
-  if(e.target.id==='modal-overlay') document.getElementById('modal-overlay').classList.remove('show');
-});
+document.getElementById('btn-style').addEventListener('click', ()=>{ renderStyleModal(); document.getElementById('modal-overlay').classList.add('show'); });
+document.getElementById('btn-modal-close').addEventListener('click', ()=>{ document.getElementById('modal-overlay').classList.remove('show'); });
+document.getElementById('modal-overlay').addEventListener('click', (e)=>{ if(e.target.id==='modal-overlay') document.getElementById('modal-overlay').classList.remove('show'); });
 
 /* ============ 初始化 ============ */
 async function init(){
   await loadData();
   document.getElementById('loading').style.display = 'none';
-  
-  const lrColors = {
-    brooke: '#b56a5d',    // 砖红/玫瑰
-    casaubon: '#5b7586',  // 邮局蓝
-    vincy: '#d4a755',     // 麦秆金
-    garth: '#738c62',     // 草甸绿
-    bulstrode: '#8a7d71', // 灰褐
-    town: '#c4a88b'       // 原木色
-  };
-  Object.keys(appData.factions).forEach(k => {
-    if(lrColors[k]) appData.factions[k].color = lrColors[k];
-  });
-  
   buildLegend();
   rebuildGraph();
-  selectNode(appData.nodes[0] ? appData.nodes[0].id : null);
+  // 不再强制选中节点，保持清爽全局视图
 }
 init();
 </script>
